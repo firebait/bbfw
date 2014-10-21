@@ -1,0 +1,54 @@
+{
+  "name": "suit",
+  "version": "0.0.1",
+  "authors": [
+    "SET Media"
+  ],
+  "description": "SET UI Tools or SUIT is a framework that works with backbone to provide a scalable set of tools",
+  "main": "dist/suit.min.js",
+  "moduleType": [
+    "globals"
+  ],
+  "keywords": [
+    "SUIT",
+    "SET",
+    "Media",
+    "UI",
+    "Backbone",
+    "Framework"
+  ],
+  "license": "MIT",
+  "homepage": "https://gitlab.set.tv/set/suit",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.0",
+    "underscore": "~1.6.0",
+    "backbone": "~1.1.0",
+    "backbone-relational": "~0.8.7",
+    "rivets": "~0.6.10",
+    "momentjs": "~2.6.0",
+    "moment-timezone": "~0.0.6",
+    "underscore.string": "~2.3.3",
+    "underscore.inflection": "~1.1.2",
+    "pikaday": "~1.2.0",
+    "jquery-timepicker-jt": "~1.3.5",
+    "skidding--dragdealer": "~0.9.7",
+    "videojs": "~4.5.2",
+    "nvd3": "~1.1.10",
+    "typeahead.js": "~0.10.2"
+  },
+  "devDependencies": {
+    "sinon": "~1.7.3",
+    "jasmine-sinon": "~0.3.1"
+  },
+  "resolutions": {
+    "underscore": ">=1.5.0"
+  },
+  "private":true
+}

@@ -1,0 +1,41 @@
+{
+  "name": "suit",
+  "version": "0.0.1",
+  "description": "SET UI Tools or SUIT is a framework that works with backbone to provide a scalable set of tools",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.set.tv:set/suit.git"
+  },
+  "keywords": [
+    "SUIT",
+    "SET Media",
+    "ui",
+    "backbone",
+    "framework"
+  ],
+  "author": "SET Media, inc.",
+  "license": "ISC",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "load-grunt-tasks": "~0.2.0",
+    "grunt-contrib-clean": "~0.5.0",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.0",
+    "grunt-contrib-jshint": "~0.7.0",
+    "jshint-stylish": "~0.1.3",
+    "grunt-contrib-jst": "~0.5.0",
+    "grunt-contrib-watch": "~0.5.2",
+    "grunt-jsdoc": "0.5.4",
+    "ink-docstrap": "*",
+    "time-grunt": "~0.2.0",
+    "grunt-contrib-connect": "~0.5.0",
+    "grunt-contrib-jasmine": "~0.5.1",
+    "sinon": "~1.7.3",
+    "grunt-template-jasmine-istanbul": "~0.2.5"
+  }
+}

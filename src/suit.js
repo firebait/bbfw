@@ -1,0 +1,5 @@
+/** @namespace */
+Suit = {
+    /** @namespace */
+    Components: {}
+};
