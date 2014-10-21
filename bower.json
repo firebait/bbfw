@@ -5,7 +5,7 @@
     "SET Media"
   ],
   "description": "SET UI Tools or SUIT is a framework that works with backbone to provide a scalable set of tools",
-  "main": ["dist/suit.min.js", "dist/templates.min.js"],
+  "main": ["dist/templates.min.js", "dist/suit.min.js"],
   "moduleType": [
     "globals"
   ],
@@ -33,7 +33,7 @@
     "backbone-relational": "~0.8.7",
     "rivets": "~0.6.10",
     "momentjs": "~2.6.0",
-    "moment-timezone": "~0.0.6",
+    "moment-timezone": "~0.2.3",
     "underscore.string": "~2.3.3",
     "underscore.inflection": "~1.1.2",
     "pikaday": "~1.2.0",
