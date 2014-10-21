@@ -32,7 +32,6 @@
     "backbone": "~1.1.0",
     "backbone-relational": "~0.8.7",
     "rivets": "~0.6.10",
-    "momentjs": "~2.6.0",
     "moment-timezone": "~0.2.3",
     "underscore.string": "~2.3.3",
     "underscore.inflection": "~1.1.2",
@@ -48,7 +47,7 @@
     "jasmine-sinon": "~0.3.1"
   },
   "resolutions": {
-    "underscore": ">=1.5.0"
+    "underscore": ">=1.7.0"
   },
   "private":true
 }
