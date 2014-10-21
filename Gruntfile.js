@@ -170,11 +170,28 @@ module.exports = function (grunt) {
 
         // Concatenate all of the js files from source into
         concat: {
-            '<%= dist.path %>/suit.js': '<%= src.path %>/**/*.js'
+            '<%= dist.path %>/suit.js': [
+                '<%= src.path %>/suit.js',
+                '<%= src.path %>/helpers.js',
+                '<%= src.path %>/restful_urls.js',
+                '<%= src.path %>/sync.js',
+                '<%= src.path %>/local_storage.js',
+                '<%= src.path %>/validations.js',
+                '<%= src.path %>/model.js',
+                '<%= src.path %>/collection.js',
+                '<%= src.path %>/view.js',
+                '<%= src.path %>/controller.js',
+                '<%= src.path %>/cache.js',
+                '<%= src.path %>/router.js',
+                '<%= src.path %>/can.js',
+                '<%= src.path %>/component.js',
+                '<%= src.path %>/components/**/*.js'
+            ]
         },
 
         uglify: {
-            '<%= dist.path %>/suit.min.js': '<%= dist.path %>/suit.js'
+            '<%= dist.path %>/suit.min.js': '<%= dist.path %>/suit.js',
+            '<%= dist.path %>/templates.min.js': '<%= src.path %>/templates.js'
         },
 
         jsdoc: {

@@ -1,3 +1,1440 @@
+/** @namespace */
+Suit = {
+    /** @namespace */
+    Components: {}
+};
+'use strict';
+
+/**
+  * Helper functions for general use.
+  */
+
+Suit.Helpers = {
+    /** Revert the camelcasing to underscored in order to fullfil api conventions
+    @params {Object} attributes
+    */
+    toJSON: function (attributes) {
+        var self = this;
+        if (_.isArray(attributes) && _.isObject(attributes) && attributes.length > 0 && _.isObject(attributes[0])) {
+            _.each(attributes, function (object, index) {
+                attributes[index] = self.toJSON.apply(self, [object]);
+            });
+        } else if (_.isObject(attributes) && !_.isArray(attributes)) {
+            _.each(_.keys(attributes), function (key) {
+                var value = attributes[key];
+                var newKey = _.str.underscored(key);
+                if (attributes[key]) {
+                    delete attributes[key];
+                }
+                // We need to parse all objects recursive.
+                if (_.isObject(value)) {
+                    attributes[newKey] = self.toJSON.apply(self, [value]);
+                } else {
+                    attributes[newKey] = value;
+                }
+            });
+        }
+        return attributes;
+    },
+    /** Parse server attributes to camelcase in order to fullfil conventions
+    @params {object} response - server response
+     */
+    toCamelCaseObject: function (response) {
+        var self = this;
+        if (_.isArray(response) && _.isObject(response) && response.length > 0 && _.isObject(response[0])) {
+            _.each(response, function (object, index) {
+                response[index] = self.toCamelCaseObject.apply(self, [object]);
+            });
+        } else if (_.isObject(response) && !_.isArray(response)) {
+            _.each(_.keys(response), function (key) {
+                var value = response[key];
+                var newKey = _.str.camelize(key);
+                delete response[key];
+                // We need to parse all objects recursive.
+                if (_.isObject(value)) {
+                    response[newKey] = self.toCamelCaseObject.apply(self, [value]);
+                } else {
+                    response[newKey] = value;
+                }
+            });
+        }
+        return response;
+    },
+    /** Replaces commonly-used Windows 1252 encoded chars that do not exist in ASCII or ISO-8859-1 with ISO-8859-1 cognates.*/
+    convertToUtf8: function (text) {
+        var s = text;
+        if (!_.isString(s)) {
+            return s;
+        }
+        // smart single quotes and apostrophe
+        s = s.replace(/[\u2018]/g, '\'');
+        s = s.replace(/[\u2019]/g, '\'');
+        s = s.replace(/[\u201A]/g, '\'');
+        // smart double quotes
+        s = s.replace(/[\u201C]/g, '\"');
+        s = s.replace(/[\u201D]/g, '\"');
+        s = s.replace(/[\u201E]/g, '\"');
+        // ellipsis
+        s = s.replace(/\u2026/g, '...');
+        // dashes
+        s = s.replace(/[\u2013]/g, '-');
+        s = s.replace(/[\u2014]/g, '-');
+        // circumflex
+        s = s.replace(/\u02C6/g, '^');
+        // open angle bracket
+        s = s.replace(/\u2039/g, '<');
+        // close angle bracket
+        s = s.replace(/\u203A/g, '>');
+        // spaces
+        s = s.replace(/[\u02DC]/g, ' ');
+        s = s.replace(/[\u00A0]/g, ' ');
+        
+        return s;
+    }
+};
+
+/** Formatting helpers for the Suit Framework. This includes the _.str elements */
+Suit.Helpers.Formatters = _.extend(_.str, {
+    /** Formats a date on MM/DD/YYYY way */
+    formatDate: function (date) {
+        if (_.isUndefined(date) || date === '') {
+            return '';
+        } else {
+            return moment(date).format('MM/DD/YYYY');
+        }
+    },
+    /** Formats a number to be separated by commas. */
+    formatNumber: function (num) {
+        if (!_.isUndefined(num) && num !== null) {
+            if (num % 1 !== 0) {
+                num = (parseFloat(num)).toPrecision(3);
+
+                if (String(num).indexOf('0.') === 0) {
+                    num = (parseFloat(num)).toFixed(2);
+                }
+            }
+            return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
+        } else {
+            return 0;
+        }
+    },
+    /** Formats a number and add % symbol at the end */
+    formatNumberPercentage: function (num) {
+        if (!_.isUndefined(num) && num !== null) {
+            if (num % 1 !== 0) {
+                num = (parseFloat(num)).toPrecision(3);
+
+                if (String(num).indexOf('0.') === 0) {
+                    num = (parseFloat(num)).toFixed(2);
+                }
+            }
+            return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') + '%';
+        } else {
+            return 0 + '%';
+        }
+    },
+    /** Formats a number into one decimal place */
+    formatNumberOneDecimal: function (num) {
+        if (!_.isUndefined(num) && num !== null) {
+            if (num % 1 !== 0) {
+                num = (parseFloat(num)).toPrecision(3);
+                num = (parseFloat(num)).toFixed(1);
+            }
+            return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
+        } else {
+            return 0;
+        }
+    },
+    /** Abbreviates a number using K, MM, and B depending on the quantity,
+      * without decimal places */
+    abbreviateNumberNoDecimal: function (num) {
+        if (_.isNull(num) || isNaN(num)) {
+            return '0';
+        } else {
+            var notNegative = true;
+            if (num < 0) {
+                num = num * -1;
+                notNegative = false;
+            }
+            if (num >= 1000000000) {
+                num = num / 1000000000;
+                return notNegative ? Math.round(num) + 'B' : Math.round(num) * -1 + 'B';
+            } else if (num >= 1000000) {
+                num = num / 1000000;
+                return notNegative ? Math.round(num) + 'MM' : Math.round(num) * -1 +  'MM';
+            } else if (num >= 1000) {
+                num = num / 1000;
+                return notNegative ? Math.round(num) + 'K' : Math.round(num) * -1 + 'K';
+            } else {
+                return notNegative ? Math.round(num) : Math.round(num) * -1;
+            }
+        }
+    },
+
+    //* Abbreviates a number using K, MM, and B depending on the quantity 
+    abbreviateNumber: function (num) {
+        if (_.isNull(num) || isNaN(num)) {
+            return '0';
+        } else {
+            if (num >= 1000000000) {
+                num = num / 1000000000;
+                return this.formatNumber(num) + 'B';
+            } else if (num >= 1000000) {
+                num = num / 1000000;
+                return this.formatNumber(num) + 'MM';
+            } else if (num >= 1000) {
+                num = num / 1000;
+                return this.formatNumber(num) + 'K';
+            } else {
+                return this.formatNumber(num);
+            }
+        }
+    },
+    /*
+    Extract all symbols and characters from a string and only leave numbers.
+    @param{String} str - example: $1000 -> 1000
+    */
+    extractNumbersFromString: function (str) {
+        if (str && str.match(/\d+\.?\d*/g)) {
+            return str.match(/\d+\.?\d*/g).join('');
+        }
+        return NaN;
+    },
+    /**Capitalize first letter of a string
+    @params {String} str
+    */
+    capitalize: function (str) {
+        return str.charAt(0).toUpperCase() + str.substring(1).toLowerCase();
+    },
+    secondsToString: function (secs) {
+        var d = moment.duration(secs, 'seconds');
+        var formattedString = '';
+        var hours = d.hours();
+        var minutes = ('0' + d.minutes()).slice(-2);
+        var seconds = ('0' + d.seconds()).slice(-2);
+        if (hours > 0) {
+            hours = ('0' + hours).slice(-2);
+            formattedString += hours + ':';
+        }
+        formattedString += minutes + ':';
+        formattedString += seconds;
+        return formattedString;
+    },
+
+    prepend: function () {
+        var args = Array.prototype.slice.call(arguments);
+        var value = args.shift();
+        return args.join(' ') + ' ' + value;
+    },
+
+    append: function () {
+        var args = Array.prototype.slice.call(arguments);
+        var value = args.shift();
+        return value + ' ' + args.join(' ');
+    },
+
+    replace: function (value, search, replace) {
+        return String(value).replace(search, replace);
+    },
+
+    convertApiURL: function (value) {
+        value = String(value).split('/api/');
+        value = value.length > 1 ? value[value.length - 1] : false;
+        if (value === false) {
+            throw ('Not a valid API url');
+        }
+        return '#' + value.replace('_advertiser', 'advertiser');
+    },
+
+    lowercase: function (value) {
+        return String(value).toLowerCase();
+    },
+
+    uppercase: function (value) {
+        return String(value).toUpperCase();
+    },
+
+    pluralize: function () {
+        return _.pluralize.apply(_, arguments);
+    },
+
+    singularize: function () {
+        return _.singularize.apply(_, arguments);
+    },
+
+    gsub: function () {
+        return _.gsub.apply(_, arguments);
+    },
+
+    ordinalize: function () {
+        return _.ordinalize.apply(_, arguments);
+    }
+
+});
+
+'use strict';
+
+/**
+  * Helper function that generates restful urls for views to use in anchors
+  */
+
+Suit.RestfulUrls = {
+    /** Url used to generate links for this resource.
+        You can override this methods to generate custom functionality.
+    **/
+    _restfulBase: function () {
+        // We need to find a way to extract this into a configuration, so we can pass a regex that will format the url with the proper format per application.
+        var url = _.result(this, 'urlRoot');
+        if (_.isUndefined(url)) {
+            url = _.result(this, 'url');
+            url = url.substr(0, url.lastIndexOf('/'));
+        }
+        return '#' + url.replace('/api/', '').replace('_advertiser', 'advertiser');
+    },
+    /** Show link url helper method. **/
+    showUrl: function () {
+        return this._restfulBase.apply(this) + '/' + this.id;
+    },
+    /** New link url helper method. **/
+    newUrl: function () {
+        return this._restfulBase.apply(this) + '/new';
+    },
+    /** Edit link url helper method. **/
+    editUrl: function () {
+        return this._restfulBase.apply(this) + '/' + this.id + '/edit';
+    },
+    /** Delete link url helper method. **/
+    deleteUrl: function () {
+        return this._restfulBase.apply(this) + '/' + this.id;
+    }
+};
+
+'use strict';
+
+/**
+  * Overwrite to default Backbone.sync function. Our implementation executes
+  * some custom events based on Backbone.sync.methodMap (created, update, delete,
+  * patch).
+  */
+var backBoneSync = Backbone.sync;
+Backbone.sync = function (method, model, options) {
+    options = options || {};
+    var success = options.success;
+
+    var eventName = method;
+    options.success = function (resp, status, xhr) {
+        switch (method) {
+            case 'read':
+                eventName = method;
+                break;
+            case 'patch':
+                eventName = 'patched';
+                break;
+            default:
+                eventName = method + 'd';
+        }
+
+        if (success) {
+            success(resp, status, xhr);
+            model.trigger(eventName, model, resp, options);
+        }
+    };
+
+    if (_.contains(_.functions(model), 'saveToLocalStorage')) {
+        model.saveToLocalStorage(eventName);
+    }
+
+    if (_.isUndefined(model.remoteStorage) || model.remoteStorage === true) {
+        backBoneSync(method, model, options);
+    }
+
+};
+'use strict';
+/**
+  * @class Suit.LocalStorage:
+  *
+  * Its a extention to save suit model information on localStorage.
+  *
+  * Usage:
+  * Initialize a parameter in the model with the name localStorage: true.
+  * If you want the model to save on local cache and the model has no url to save
+  * then pass in the parameter remoteStorage: false.
+  */
+Suit.LocalStorage = {
+    saveToLocalStorage: function (eventName) {
+        if (!this.localStorage || _.isUndefined(this.className)) {
+            return;
+        }
+        //console.info('saveToLocalStorage');
+        var key = this.className + this.id;
+        if (eventName !== 'deleted') {
+            var currentAttr = JSON.parse(localStorage.getItem(key));
+            if (!_.isObject(currentAttr)) {
+                currentAttr = {};
+            }
+            var attributes = this.attributes;
+            _.each(attributes, function (value, k) {
+                currentAttr[k] = value;
+            });
+            //console.info('saving to local storage');
+            localStorage.setItem(key, JSON.stringify(currentAttr));
+        } else {
+            //console.info('destroying from local storage');
+            localStorage.removeItem(key);
+        }
+    },
+    loadFromLocalStorage: function (force) {
+        if (!this.localStorage || _.isUndefined(this.className)) {
+            return;
+        }
+        var key = this.className + this.id;
+        var allAttrs = localStorage.getItem(key);
+
+        // Load if you are forcing it or if it has only the id attribute.
+        if (this.localStorage && (force || ((this.id && _.size(this.attributes) === 1) && !_.isNull(allAttrs)))) {
+            //console.info('loadFromLocalStorage');
+            var self = this;
+            this.attributes = JSON.parse(allAttrs);
+            // We need to trigger the change events on the model for each attribute that was set.
+            this.trigger('change');
+            _.each(allAttrs, function (attr) {
+                self.trigger('change:' + attr);
+            });
+        }
+    }
+};
+
+'use strict';
+/**
+  * @class Suit.Validation:
+  *
+  * This is a helper class that is meant to be used for handling the Model validation
+  * directly on our models. This will allow us to execute validations easily and mantain
+  * all validation logic in one single place.
+  *
+  * @author SET Media, Inc.
+  */
+Suit.Validation = {
+    /** Default patterns */
+    patterns: {
+        // Valid E-mail Address
+        email: /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))$/i
+    },
+    /** Default Message Errors */
+    validatorMessages: {
+        required: '{attr} is required.',
+        email: '{attr} is not an e-mail address.',
+        minLengthPass: '{attr} needs to be at least 6 characters long.',
+        min: '{attr} needs to be at least {min} characters long.',
+        max: '{attr} needs to be less than {max} characters long.',
+        range: '{attr} needs to be between {min} and {max}.',
+        dateTime: 'The date and time you introduced was not valid. We like format YYYY/MM/DD HH:MM.',
+        inclusion: '{attr} value in not included in the list of values.',
+        confirmation: '{attr} and it\'s confirmation field do not match.',
+        numeric: '{attr} value must be numeric.'
+    },
+    /** Validator functions */
+    validators: {
+        // Required validation
+        required: function (attr, val) {
+            if (_.isNull(val) ||
+                _.isUndefined(val) ||
+                (_.isString(val) && val.trim() === '') ||
+                (_.isArray(val) && _.isEmpty(val))) {
+                return this.validatorMessages.required.replace('{attr}', _.str.capitalize(attr));
+            }
+        },
+        // E-mail pattern validation
+        email: function (attr, val) {
+            if (!_.str.isBlank(val) && (!_.isString(val) || !val.match(this.patterns.email))) {
+                return this.validatorMessages.email.replace('{attr}', _.str.capitalize(attr));
+            }
+        },
+        // Min length validation
+        min: function (attr, val, min) {
+            if (!_.isString(val) || val.length < min) {
+                return this.validatorMessages.min.replace('{attr}', _.str.capitalize(attr))
+                    .replace('{min}', min.toString());
+            }
+        },
+        // Max length validation.
+        max: function (attr, val, max) {
+            if (!_.isString(val) || val.length > max) {
+                return this.validatorMessages.max.replace('{attr}', _.str.capitalize(attr))
+                    .replace('{max}', max.toString());
+            }
+        },
+        // Range length validation. Range is an array that describes the min and the
+        // max range values.
+        range: function (attr, val, range) {
+            if (!_.isString(val) || val.length < range[0] || val.length > range[1]) {
+                return this.validatorMessages.range.replace('{attr}', _.str.capitalize(attr))
+                    .replace('{min}', range[0].toString())
+                    .replace('{max}', range[1].toString());
+            }
+        },
+        // Password length checker atleast 6 characters long
+        minLengthPass: function (attr, val) {
+            if (!_.isUndefined(val) && val.length < 6) {
+                return this.validatorMessages.minLengthPass.replace('{attr}', _.str.capitalize(attr));
+            }
+        },
+        // Verfies the value in contained in a list.
+        inclusion: function (attr, val, values) {
+            if (!_.isUndefined(val) && !_.contains(values, val)) {
+                return this.validatorMessages.inclusion
+                    .replace('{attr}', _.str.capitalize(attr));
+            }
+        },
+        // Verifies if the field has a confirmation attribute.
+        // Ex. password == passwordConfirmation
+        confirmation: function (attr, val) {
+            var confirmationAttr = this.get(attr + 'Confirmation');
+            if (val && (confirmationAttr !== val)) {
+                return this.validatorMessages.confirmation
+                    .replace('{attr}', _.str.capitalize(attr));
+            }
+        },
+        // Validates if the value introduced is actually a numeric value
+        numeric: function (attr, val) {
+            // Only validates if value is present
+            if (val || val === 0) {
+                val = parseFloat(val);
+                if (!_.isNumber(val) || _.isNaN(val)) {
+                    return this.validatorMessages.numeric
+                        .replace('{attr}', _.str.capitalize(attr));
+                }
+            }
+        },
+    },
+    /** Bootstrap for the validation method, used by the .validate() and .isValid()
+      * methods. This will return an object if the validation didn't pass, or will
+      * not return any value if it passed (according to the Backbone docs) */
+    validate: function (attrs) {
+        var model = this,
+            allAttrs = _.extend({}, model.attributes, attrs),
+            result = this.validateModel(allAttrs);
+
+        // When a validation is executed, we should fire a `validated` event, that
+        // would be handy on the view for showing the errors (if any).
+        _.defer(function () {
+            model.trigger('validated', result.isValid, model, result.invalidAttrs);
+        });
+
+        // We only need to return a value once the validation fails
+        if (!result.isValid) {
+            return result.invalidAttrs;
+        }
+    },
+    /** Validates the entire model, after provided with a list of attributes.
+      * If the validation does not pass, a model containing the `invalidAttrs` will
+      * be provided with a list of attributes that didn't pass the validation.
+      * The object will contain a `isValid` attribute, that describes if the validation
+      * passed or not. */
+    validateModel: function (attrs) {
+        var model = this,
+            invalidAttrs = {},
+            isValid = true;
+
+        // Iterate over each rule and validate every attribute individually
+        _.each(model.validates, function (value, key) {
+            var result = model.validateAttr(key, attrs[key]);
+            if (result && !_.isEmpty(result)) {
+                isValid = false;
+                invalidAttrs[key] = result;
+            }
+        });
+
+        return {
+            invalidAttrs: invalidAttrs,
+            isValid: isValid
+        };
+    },
+    /** Validates a single attribute against a provided value. If the validation
+      * does not pass, then the error message will be returned */
+    validateAttr: function (attr, val) {
+        var model = this,
+            rules = this.validates[attr].rules,
+            error = [];
+
+        // Iterate every rule and validate every rule individually. If more than
+        // one fails, only the last error message will be returned.
+        _.each(rules, function (rule) {
+            var result = false;
+            var args = [attr, val];
+
+            // If our validation needs any extra parameter, then we pass it to
+            // the validator message
+            if (model.validates[attr][rule]) {
+                args.push(model.validates[attr][rule]);
+            }
+
+            // We need to check if this is a default validation or a custom validation
+            // function. Custom validation functions are specified at Model level.
+            if (model.validators[rule]) {
+                result = model.validators[rule].apply(model, args);
+            } else if (_.isFunction(model[rule])) {
+                result = model[rule].apply(model, args);
+            }
+
+            if (result && result.trim() !== '') {
+                error.push(result);
+            }
+        });
+
+        return error;
+    }
+};
+'use strict';
+
+Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
+    /**
+      * @class Suit.Model
+      * @classdesc Suit framework model class, it's use to map a row in the remote database or to represent an object that stores properties in the front end.
+      *
+      * <h4>Extending</h4>
+      *
+      * <p><b>var MyModel = Suit.Model.extend({});</b></p>
+      *
+      * <p>This will create a model object with all of the features that Suit.Model has to offer.</p>
+      *
+      * <h4>Usage:</h4>
+      *
+      * <p>When you decide to create a Model you should create it with the command line using the following command:<br />
+      * <br />
+      * <b>yo suit:model [name] [attributeName]:[attributeType] [attributeName]:[attributeType]  ...</b></p>
+      *
+      * <p>This will create two files:<br />
+      * <br />
+      * <b>app/models/[name].js</b><br />
+      * <b>spec/model/[name]_spec.js</b><br />
+      * <br />
+      * These will be a template for testing and basic model defaults.<br />
+      * <br />
+      * Instantiation:<br />
+      * <br />
+      * <b>var model = new Suit.Model()</b></p>
+      *
+      * @augments Backbone.Model
+      * @constructs Suit.Model
+      */
+    initialize: function () {},
+    /** Values to override with date/time values */
+    dateAttrs: [],
+    /** Moment formatting for out date/time values during a get */
+    dateFormat: 'YYYY-MM-DD HH:mm:ss',
+    /** Parse server attributes to camelcase in order to fullfil conventions */
+    parse: function (response) {
+        response = Suit.Helpers.toCamelCaseObject.apply(Suit.Helpers, [response]);
+        return response;
+    },
+    /** Revert the camelcasing to underscored in order to fullfil api conventions */
+    toJSON: function () {
+        var attributes = Backbone.RelationalModel.prototype.toJSON.call(this);
+        attributes = Suit.Helpers.toJSON.apply(Suit.Helpers, [attributes]);
+        return attributes;
+    },
+    get: function (attr) {
+        this.loadFromLocalStorage();
+        var date = Backbone.RelationalModel.prototype.get.call(this, attr);
+        if (_.contains(this.dateAttrs, attr) && !_.isUndefined(date) && !_.isEmpty(date)) {
+            return moment(date);
+        } else {
+            return date;
+        }
+    },
+    convertToMoment: function (value, attributeName) {
+        if (!_.isEmpty(this.dateAttrs) && _.contains(this.dateAttrs, attributeName)) {
+            if (_.isUndefined(value) || _.isNull(value) || value === '') {
+                value = '';
+            } else {
+                if (_.isString(value)) {
+                    value = new Date(value);
+                }
+                value = moment(value).format(this.dateFormat);
+            }
+        }
+        return value;
+    },
+    set: function () {
+        var self = this;
+        var attributes = arguments[0],
+          value, options;
+
+        if (_.isObject(attributes)) {
+            options = arguments[1];
+            _.each(attributes, function (value, key) {
+                value = Suit.Helpers.convertToUtf8(value);
+                value = self.convertToMoment(value, key);
+                attributes[key] = value;
+            });
+            return Backbone.RelationalModel.prototype.set.call(this, attributes, options);
+        } else {
+            value = arguments[1];
+            options = arguments[2];
+            value = Suit.Helpers.convertToUtf8(value);
+            value = this.convertToMoment(value, attributes);
+            return Backbone.RelationalModel.prototype.set.call(this, attributes, value, options);
+        }
+    }
+});
+
+// Extend the Backbone Moment Library.
+_.extend(Suit.Model.prototype, Suit.LocalStorage, Suit.Validation, Suit.RestfulUrls);
+
+'use strict';
+
+Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototype */{
+    /**
+      * @class Suit.Collection
+      * @classdesc Suit framework collection class, it is used for storing multiple models.
+      *
+      * <h4>Extending</h4>
+      *
+      * <p><b>var MyCollection = Suit.Collection.extend({});</b></p>
+      *
+      * <p>This will create a collection object with all of the features that Suit.Collection has to offer.</p>
+      *
+      * <h4>Usage:</h4>
+      *
+      * <p>When you decide to create a Collection you should create it with the command line using the following command:<br />
+      * <br />
+      * <b>yo suit:collection [name] [modelName] ...</b></p>
+      *
+      * <p>This will create two files:<br />
+      * <br />
+      * <b>app/collectionss/[name].js</b><br />
+      * <b>spec/collections/[name]_spec.js</b><br />
+      * <br />
+      * These will be a template for testing and basic collection defaults.<br />
+      * <br />
+      * Instantiation:<br />
+      * <br />
+      * <b>var collection = new Suit.Collection()</b></p>
+      *
+      * @augments Backbone.Collection
+      * @constructs Suit.Collection
+      */
+    initialize: function () {},
+    /**
+      * Returns the attribute that will be used to sort the collection
+      * @return {string}
+      */
+    sortBy: 'id',
+    /**
+      * Returns the attribute that will be used to define the direction or order of the sort, values are 'asc' or 'desc'.
+      * @return {string}
+      */
+    sortOrder: 'asc',
+    /** Model to be used with this collection. */
+    model: Suit.Model,
+    /**
+      * Comparator function used by the 'sort()' method in order to sort the collection using the 'sortBy' and 'sortOrder' attributes.
+      * @return {number}
+      */
+    comparator: function (a, b) {
+        if (_.isEmpty(this.sortBy) || _.isEmpty(this.sortOrder)) {
+            return;
+        }
+        var sortBy = this.sortBy.split(':');
+        var attr = sortBy[0];
+        var func = sortBy[1];
+        if (_.isUndefined(func)) {
+            a = a.get(attr);
+            b = b.get(attr);
+        } else {
+            a = a[func]();
+            b = b[func]();
+        }
+        if (_.isString(a)) { a = a.toLowerCase(); }
+        if (_.isString(b)) { b = b.toLowerCase(); }
+
+        if (this.sortOrder === 'asc') {
+            return a > b ?  1 : a < b ? -1 : 0;
+        } else {
+            return a > b ?  -1 : a < b ? 1 : 0;
+        }
+    }
+});
+
+// Extend the RestfulUrls.
+_.extend(Suit.Collection.prototype, Suit.RestfulUrls);
+
+'use strict';
+
+Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
+    /**
+      * @class Suit.View
+      * @classdesc Suit framework view class, it's use to manage the DOM layout and events triggered by the application.
+      *
+      * <h4>Extending</h4>
+      *
+      * <p><b>var MyView = Suit.View.extend({ Suit.View.prototype.initialize.apply(this, this.options); });</b></p>
+      *
+      * <p>This will create a view object with all of the features that Suit.View has to offer.</p>
+      *
+      * <h4>Usage:</h4>
+      *
+      * <p>When you decide to create a View you should create it with the command line using the following command:<br />
+      * <br />
+      * <b>yo suit:view[folderName]/[name]</b></p>
+      *
+      * <p>The folder is optional.</p>
+      *
+      * <p>This will create two files:<br />
+      * <br />
+      * <b>app/views/[folderName]/[name].js</b><br />
+      * <b>spec/views/[folderName]/[name]_spec.js</b><br />
+      * <br />
+      * These will be a template for testing and basic view defaults.<br />
+      * <br />
+      * Instantiation:<br />
+      * <br />
+      * <b>var view = new Suit.View()</b></p>
+      *
+      * @augments Backbone.View
+      * @constructs Suit.View
+      */
+    initialize: function (options) {
+        // This should included in all of the
+        // Suit.View.prototype.initialize.apply(this, this.options);
+        this.viewData = {};
+        options = _.isObject(options) ? options : {};
+        this.options = _.isObject(this.options) ? this.options : {};
+        this.options = _.extend(this.options, options);
+
+        this.setParent(this.options.parent);
+        this.children = this.options.children || [];
+
+        if (!_.isUndefined(this.options.model)) {
+            this.model = this.options.model;
+            this.listenTo(this.model, 'request', this.cleanErrors);
+            this.listenTo(this.model, 'error', this.handleErrors);
+            this.listenTo(this.model, 'validated', this.handleValidation);
+        }
+
+        // Extending child events, to our custom events
+        this.events = _.result(this, 'events') || {};
+        this.events = _.extend({
+            'mouseover .error' : function (event) {
+                var currentTarget = $(event.currentTarget);
+                var key = currentTarget.attr('data-error-key');
+
+                // Since select boxes are "different", we need to actually select
+                // the <select> inside the .select-box
+                if (currentTarget.is('.select-box')) {
+                    key = currentTarget.find('select').attr('data-error-key');
+                }
+
+                // This is a way to actually recalculate the current offset
+                var tooltip = $('body').find('.tooltip[data-error-key="' + key + '"]');
+                tooltip.css({
+                    top: currentTarget.offset().top - tooltip.height() - 12,
+                    left: currentTarget.offset().left
+                }).show();
+            },
+            'mouseout .error' : function (event) {
+                var currentTarget = $(event.currentTarget);
+                var key = currentTarget.attr('data-error-key');
+                if (currentTarget.is('.select-box')) {
+                    key = currentTarget.find('select').attr('data-error-key');
+                }
+                $('body').find('.tooltip[data-error-key="' + key + '"]').hide();
+            },
+            // We are going to listen to form events and trigger them with our custom logic.
+            'submit' : function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                var form = $(event.target);
+                var action = form.attr('action');
+                var method = (form.attr('method') || 'GET').toUpperCase();
+                var attrs = form.serialize();
+                var url = action;
+                if (method === 'GET') {
+                    url += '?' + attrs;
+                }
+                App.request.params = self.serializeObject();
+                Backbone.history.navigate(url, {trigger: true});
+            }
+        }, this.events);
+
+        // Here we will wrap the render and close events.
+        var self = this;
+        // Render
+        _.bindAll(this, 'render');
+        this.render = _.wrap(this.render, function (render) {
+            self._beforeRender();
+            self.trigger('onRender');
+            render();
+            self._afterRender();
+            return self;
+        });
+        // Close
+        _.bindAll(this, 'close');
+        this.close = _.wrap(this.close, function (close) {
+            self._beforeClose();
+            self.trigger('onClose');
+            close();
+            self._afterClose();
+            return self;
+        });
+
+        // Listen to the user permissions in order to remove elements that they should not see.
+        if (App.currentUser) {
+            this.listenTo(App.currentUser, 'change:permission', this._removeUnauthorizedElements);
+        }
+
+        // Attach this view to the el data('view') property for later use.
+        this.$el.data('view', this);
+    },
+    /** Applying formatter functionality in our views */
+    formatters: Suit.Helpers.Formatters,
+    /**
+    *   Cleans error tag when form is submitted or model is saved
+    */
+    cleanErrors: function () {
+        this.$el.find('.error').removeClass('error');
+        $('body').find('.tooltip[data-error-key]').remove();
+    },
+    /**
+      * Handles server response errors for inputs on the view.
+      * @param {Suit.Model} model
+      * @param {Object} response
+    */
+    handleErrors: function (model, response) {
+        var self = this;
+        if (!_.isUndefined(response) && (response.status === 400 || response.status === 422)) {
+            var jsonResponse = JSON.parse(response.responseText);
+            _.each(jsonResponse, function (val, key) {
+                self.showVisualError(key, val);
+            });
+        }
+    },
+    /**
+      * Handles front-end validation (at client side)
+      * @param {Bool} isValid - Determines if the validation passed or not
+      * @param {Suit.Model} model - Model that is being validated
+      * @param {Object} invalidAttrs - Object with the list of invalid attrs
+      */
+    handleValidation: function (isValid, model, invalidAttrs) {
+        var self = this;
+        this.cleanErrors();
+
+        if (!isValid) {
+            _.each(invalidAttrs, function (value, key) {
+                self.showVisualError(key, value);
+            });
+        }
+    },
+    /**
+      * Handles the visual error show on the form inputs, based on the received
+      * key.
+      * @param {String} key - Form key
+      */
+    showVisualError: function (key, value) {
+        var underscoredKey = _.str.underscored(key);
+        var inputElem = this.$el.find('[name="' + key + '"], [data-name="' + key + '"], [name="' + underscoredKey + '"], [data-name="' + underscoredKey + '"]');
+        if (inputElem.length > 0) {
+            if (inputElem.prop('type') === 'select-one') {
+                inputElem.parent().addClass('error');
+            } else {
+                inputElem.addClass('error');
+            }
+
+            // Add key reference, for further use
+            inputElem.attr('data-error-key', key);
+
+            // If the value is a list of errors, we should show them in a list
+            var content = _.isArray(value) ? value.join('<br />') : value;
+
+            // Add tooltip element
+            var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
+            $('body').append(tooltip);
+        }
+    },
+    /**
+      * Sets the parent view for this view and adds this view as one of it's child.
+      * @param {Suit.View} parent
+      */
+    setParent: function (parent) {
+        this.parent = parent;
+        if (!_.isUndefined(this.parent)) {
+            this.parent.children.push(this);
+            this.parent.children = _.uniq(this.parent.children);
+            this.listenTo(this.parent, 'onClose', this.close);
+        }
+    },
+    /**
+      * Sets a view as a child and this view as a parent.
+      * @param {Suit.View} child
+      */
+    setChild: function (child) {
+        child.setParent(this);
+    },
+    /**
+      * Searches the DOM under the view and returns the Jquery element that matches the selector or the view's element
+      if the selector is undefined.
+      * @param {string} selector
+      * @return {element}
+      */
+    find: function (selector) {
+        if (_.isUndefined(selector)) {
+            return this.$el;
+        }
+        return this.$el.find(selector);
+    },
+    /**
+      * It finds the closes parent view for a selector. Useful when adding a child view using a selector and there is another
+      * child view in between.
+      * @param {string} selector
+      * @return {Suit.View}
+      */
+    findClosestParentView: function (selector) {
+        var el = this.find(selector);
+        if (el === this.$el) {
+            return this;
+        } else if (!_.isUndefined(el.data('view'))) {
+            return el.data('view');
+        } else {
+            var parent = _.find(el.parents(), function (parent) {
+                return !_.isUndefined($(parent).data('view'));
+            });
+            if (!_.isUndefined(parent)) {
+                return $(parent).data('view');
+            } else {
+                return undefined;
+            }
+        }
+    },
+    /**
+      * Appends a view to this view to the root element or the selector.
+      * @param {Suit.View} view
+      * @param {string} selector
+      */
+    appendView: function (view, selector) {
+        // Check which is the closes view before appending.
+        var parentView = this.findClosestParentView(selector);
+        var el = this.find(selector);
+        view.setParent(parentView);
+        el.append(view.el);
+        view.render();
+        return this;
+    },
+    /**
+      * Prepends a view to this view to the root element or the selector.
+      * @param {Suit.View} view
+      * @param {string} selector
+      */
+    prependView: function (view, selector) {
+        // Check which is the closes view before prepending.
+        var parentView = this.findClosestParentView(selector);
+        var el = this.find(selector);
+        view.setParent(parentView);
+        el.prepend(view.el);
+        view.render();
+        return this;
+    },
+    /**
+      * Replaces the html content of the root element or the selector of this view with another view.
+      * @param {Suit.View} view
+      * @param {string} selector
+      */
+    htmlView: function (view, selector) {
+        this.empty(selector);
+        this.appendView(view, selector);
+        return this;
+    },
+    noData: function (selector) {
+        var el = this.find(selector);
+
+        if (el.find('.no-data').length === 0) {
+            var parent = el.parent();
+            var height = el.outerHeight();
+            var width = el.outerWidth();
+
+            var divElem = $('<div class="no-data bgc-light-grey p-absolute ta-center fs-20"></div>');
+
+            parent.data('original-position', parent.css('position'));
+            parent.css('position', 'relative');
+
+            divElem.html('Ø NO DATA FOR SELECTED TIMEFRAME');
+            divElem.css('line-height', height + 'px');
+            divElem.css('vertical-align', 'middle');
+            divElem.css('width', width + 'px');
+            divElem.css('height', height + 'px');
+            divElem.css('top', 0);
+            divElem.css('left', 0);
+            el.append(divElem);
+        }
+    },
+    removeNoData: function (selector) {
+        var el = this.find(selector);
+        var parent = el.parent();
+        var noDataEl = el.find('.no-data');
+        noDataEl.remove();
+        parent.css('position', parent.data('original-position'));
+    },
+    /**
+      * Displays loader for the current view selector.
+      * Example usage: view.loader({selector: '.anyClass', loaderSize: 'small', tone: 'light'});
+      *
+      * @param {Object}
+      * object.selector
+      * object.loaderSize - large or small default is large.
+      * object.tone - dark or light default is dark.
+    **/
+    loader: function (object) {
+        var el;
+        if (object && object.selector) {
+            el  = this.find(object.selector);
+        } else {
+            el = this.$el;
+        }
+        var parent = el.parent();
+        var height = el.outerHeight();
+        var width = el.outerWidth();
+
+        var divElem = $('<div class="loader"></div>');
+
+        if (object && object.loaderSize === 'small') {
+            divElem.addClass('small');
+        }
+
+        if (object && object.tone === 'light') {
+            divElem.addClass('light');
+        }
+
+        parent.data('original-position', parent.css('position'));
+        parent.css('position', 'relative');
+        divElem.css('width', width + 'px');
+        divElem.css('height', height + 'px');
+        divElem.css('top', 0);
+        divElem.css('left', 0);
+        el.append(divElem);
+    },
+    /**
+    Remove the loader from the view
+    @params {String} selector.
+    */
+    removeLoader: function (selector) {
+        var el = this.find(selector);
+        var parent = el.parent();
+        var loader = el.find('.loader');
+        loader.remove();
+        parent.css('position', parent.data('original-position'));
+    },
+    /**
+      * Empty's the content of the views element or an specific selector.
+      * @param {string} selector
+      */
+    empty: function (selector) {
+        this.closeChildren(selector);
+        this.find(selector).empty();
+    },
+    /**
+      * It fetches all the children for a view using the passed selector to search the DOM under the view.
+      * @param {string} selector
+      * @return {array} array of children views.
+      */
+    findChildrenBySelector: function (selector) {
+        if (!_.isUndefined(selector)) {
+            var closestParent = this.findClosestParentView(selector);
+            if (!_.isUndefined(closestParent)) {
+                var el = closestParent.find(selector).get(0);
+                return _.filter(closestParent.children, function (child) {
+                    return child.$el === el || _.contains(child.$el.parents(), el);
+                });
+            }
+        }
+        return this.children;
+    },
+    /**
+      * It closes child views using the passed selector by removing them for DOM and clearing their events.
+      * @param {string} selector
+      */
+    closeChildren: function (selector) {
+        var children = this.findChildrenBySelector(selector);
+        for (var i = children.length - 1; i >= 0; i--) {
+            children[i].close();
+        }
+    },
+    /**
+      * It handles before close events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
+      */
+    _beforeClose: function () {
+        if (this._rivets) {
+            this._rivets.unbind();
+        }
+        this.$('.error').off('hover');
+        this.trigger('beforeClose');
+        this.beforeClose();
+        // Remove from parent children.
+        if (!_.isUndefined(this.parent)) {
+            var index = this.parent.children.indexOf(this);
+            if (index >= 0) {
+                this.parent.children.splice(index, 1);
+            }
+            this.parent = undefined;
+        }
+        this.trigger('onClose');
+        this.unbind();
+        if (!_.isUndefined(this.$el)) {
+            this.$el.unbind();
+        }
+        // Detach all events and remove all JQuery children form DOM and clean up.
+        if (!_.isUndefined(this.$el)) {
+            _.each(this.$el.find('*'), function (el) {
+                el = $(el);
+                el.unbind();
+                el.remove();
+            });
+        }
+    },
+    /** Method to be implemented for before close handling. */
+    beforeClose: function () {
+        // Override and implement your before render logic.     
+    },
+    /**
+      * It closes the view by removing it from DOM, clearing all event and closing all child views.
+      */
+    close: function (event) {
+        // Prevent defaults if it's called by an actual object on the view.
+        if (event instanceof Event) {
+            event.preventDefault();
+        }
+        if (!_.isUndefined(this.$el)) {
+            this.remove(); // <<< remove does two things, this.$el.remove() and also this.stopListening()
+        } else {
+            this.stopListening();
+        }
+        if (!_.isUndefined(this.$el)) {
+            delete this.$el;
+        }
+        delete this.el;
+    },
+    /**
+      * It handles after close events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
+      */
+    _afterClose: function () {
+        this.trigger('afterClose');
+        this.afterClose();
+    },
+    /** Method to be implemented for after render handling. */
+    afterClose: function () {
+        // Override and implement your after close logic.
+    },
+    /**
+      * It handles before render events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
+      */
+    _beforeRender: function () {
+        this.trigger('beforeRender');
+        this.beforeRender();
+    },
+    /** Method to be implemented for before render handling. */
+    beforeRender: function () {
+        // Override and implement your before render logic.
+    },
+    /** Render function for the view */
+    render: function () {
+        this.empty();
+        this.$el.html(this.template(this));
+        return this;
+    },
+    /**
+      * It handles after render events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
+      */
+    _afterRender: function () {
+        var self = this;
+        this.initializeComponents();
+        // Remove the data-role components not visible to some users.
+        this._removeUnauthorizedElements();
+        //we have to wait for compnents to initialize before the render.
+        // _.defer(function () {
+
+        if (this._rivets) {
+            this._rivets.unbind();
+        }
+        this._rivets = window.rivets.bind(this.el, this);
+
+        // If we are re-rendering, we need to keep focus on first element with autofocus
+        var autoFocused = self.find('input[autofocus]:first');
+        if (!_.isEmpty(autoFocused)) {
+            _.defer(function () { autoFocused.focus(); });
+        }
+
+        self.trigger('afterRender');
+        self.afterRender();
+        // });
+    },
+    /** This checks the current user's permission is present in the data-permissions attributes.
+     * The roles will be separated by commas.
+     */
+    _removeUnauthorizedElements: function () {
+        if (!App.currentUser || !this.el) { return; }
+        var self = this;
+        var elements = this.find('[data-permissions]');
+        var permission = App.currentUser.get('permission');
+
+        _.each(elements, function (el) {
+            el = $(el);
+            var permissions = el.attr('data-permissions').replace(/ /g, '').split(',');
+            if (!_.contains(permissions, permission)) {
+                // We need to figure out if this is a view or just a simple element.
+                var view = el.data('view');
+                if (view) {
+                    view.close();
+                } else {
+                    self.empty(el);
+                    el.remove();
+                }
+            }
+        });
+    },
+    /** Method to be implemented for after render handling. */
+    afterRender: function () {
+        // Override and implement your after render logic.
+    },
+    /** Use for Suit Component management. It searches for uninitialized components inside the view in order to
+      * properly initialized them. */
+    initializeComponents: function () {
+        var self = this;
+        _.each(Suit.Components.registeredComponents, function (component) {
+            var foundElements = self.$el.find('.' + _.str.dasherize(component).slice(1));
+            // For each found element we need to figure out if it has a compoment,
+            // if it's initialized and attached to the view as a child.
+            if (foundElements.length > 0) {
+                _.each(foundElements, function (fc) {
+                    var elementView = $(fc).data('view');
+                    if (_.isUndefined(elementView)) {
+                        var c = new Suit.Components[component]({el: fc});
+                        c.setParent(self);
+                    } else {
+                        elementView.setParent(self);
+                    }
+                });
+            }
+        });
+    },
+    /** Serializer for the form components, useful for converting form elements into
+      * a JavaScript object, and then hit the service with this data */
+    serializeObject: function (el) {
+        el = el || 'form';
+        var o = {};
+        var a = this.find(el + ' :input').serializeArray();
+
+        $.each(a, function () {
+            var keyName = _.str.camelize(this.name);
+
+            if (o[keyName]) {
+                if (!o[keyName].push) {
+                    o[keyName] = [o[keyName]];
+                }
+                o[keyName].push(this.value || '');
+            } else {
+                o[keyName] = this.value || '';
+            }
+        });
+
+        return o;
+    }
+});
+
+'use strict';
+
+var Controller = Suit.Controller = function (options) {
+    options = options || {};
+
+    this.initialize.apply(this, arguments);
+};
+
+var Events = Backbone.Events;
+
+_.extend(Controller.prototype, Events, /** @lends Controller.prototype */{
+    /**
+      * @class Suit.Controller
+      * @classdesc Suit frameword controller class that handles fetching data, rendering components, rendering views, updating urls and the page title.
+      *
+      * <h4>Extending</h4>
+      *
+      * <p><b>var MyController = Suit.Controller.extend({});</b></p>
+      *
+      * <p>This will create a controller object with all of the features that Suit.Controller has to offer.</p>
+      *
+      * <h4>Usage:</h4>
+      *
+      * <p>When you decide to create a Controller you should create it with the command line using the following command:<br/>
+      * <br />
+      * <b>yo suit:controller [name]</b></p>
+      *
+      * <p>This will create two files:<br />
+      * <br />
+      * <b>app/controllers/[name].js</b><br />
+      * <b>spec/controlles/[name]_spec.js</b><br />
+      * <br />
+      * These will be a template for testing and basic controller defaults.<br />
+      * <br />
+      * Instantiation:<br />
+      * <br />
+      * <b>var controller = new Suit.Controller()</b></p>
+      *
+      * @constructs Suit.Controller
+      */
+    //initialize: function () {},
+    /**
+      * The _initialize function will check if the current user has permissions to execute the controller
+      * depending on the App.can object.<br />
+      * If the user does not meet the criteria, then it will be sent to redirect url in the object. If not defined,
+      * the user will be redirected to the main page.
+      */
+    initialize: function () {
+        var self = this;
+        // Remove functions that don't need to be authenticated.
+        var functions = _.without(_.functions(this), 'goBack');
+        _.each(functions, function (func) {
+            var actions = _.functions(Events);
+            _.zip(actions, ['initialize', 'constructor']);
+            if (!_.contains(actions, func)) {
+                self[func] = _.wrap(self[func], function (f) {
+                    // Check if the user can access.
+                    if (Suit.Can.go(self.className, func)) {
+                        return f.apply(self, Array.prototype.slice.call(arguments, 1));
+                    }
+                });
+            }
+        });
+    },
+    /**
+      * Set the window.document.title, so that it has a meaningful title
+      * @param {String} title - New title that is going to be applied into
+      */
+    setTitle: function (title) {
+        window.document.title = 'SET - ' + title;
+    },
+    /**
+      * Redirects back to last known route, if any, if not it will use the fallback
+      * URL.
+      * @param {String} fallback - Fallback route, if there is no previous URL
+      * @param {Boolean} trigger - If you want to trigger the navigation
+      */
+    goBack: function (fallback, trigger) {
+        fallback = fallback || null;
+        trigger  = !_.isUndefined(trigger) ? trigger : true;
+
+        var previousRoute = App.routesHistory.previousRoute;
+
+        if (previousRoute) {
+            Backbone.history.navigate(previousRoute, {trigger: trigger});
+        } else if (!previousRoute && fallback) {
+            Backbone.history.navigate(fallback, {trigger: trigger});
+        } else {
+            Backbone.history.navigate('', {trigger: trigger});
+        }
+    }
+});
+
+// Copy the Backbone extend helper function.
+Controller.extend = Backbone.Model.extend;
+
 'use strict';
 
 var Cache = Suit.Cache = function (options) {
@@ -73,6 +1510,151 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
 
 // Copy the Backbone extend helper function.
 Cache.extend = Backbone.Model.extend;
+
+'use strict';
+
+Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
+    /**
+      * @class Suit.Router
+      * @classdesc Suit framework router for basic routing and controller delegation.
+      *
+      * <h4>Extending</h4>
+      *
+      * <p><b>var MyRouter = Suit.Router.extend({});</b></p>
+      *
+      * <h4>Usage</h4>
+      *
+      * <p>When you decide to create a Router you should create it with the command line using the following command:<br/>
+      * <br />
+      * <b>yo suit:router [name]</b></p>
+      *
+      * <p>This will create two files:<br />
+      * <br />
+      * <b>app/routers/[name].js</b><br />
+      * <b>spec/routers/[name]_spec.js</b><br />
+      * <br />
+      * These will be a template for testing and basic router defaults.<br />
+      * <br />
+      * Instantiation:<br />
+      * <br />
+      * <b>var router = new Suit.Router()</b></p>
+      *
+      * @augments Backbone.Router
+      * @constructs Suit.Router
+      */
+    initialize: function () {
+        this.on('all', this.storeRoute);
+    },
+    /**
+      * Stores the route history object, so that we use for history management
+      * purposes (like going to last known route).
+      */
+    storeRoute: function () {
+        // Store new routes only if they changed
+        if (App.routesHistory.currentRoute !== Backbone.history.fragment) {
+            App.routesHistory.previousRoute = App.routesHistory.currentRoute;
+            App.routesHistory.currentRoute = Backbone.history.fragment;
+        }
+    },
+    /**
+      * Override the _extractParameters, method in order to parse parameters that look like query strings
+      * into an object.<br/>
+      * Useful for when you want to parse routes like this:<br />
+      * #status?some=value
+      */
+    _extractParameters: function (route, fragment) {
+        var re = /([^&=]+)=?([^&]*)/g;
+        var decode = function (str) {
+            return decodeURIComponent(str.replace(/\+/g, ' '));
+        };
+        var parseParams = function (query) {
+            if (query && _.contains(query, '=')) {
+                var params = {}, e;
+                e = re.exec(query);
+                while (e) {
+                    var k = decode(e[1]);
+                    var v = decode(e[2]);
+                    if (params[k] !== undefined) {
+                        if (!$.isArray(params[k])) {
+                            params[k] = [params[k]];
+                        }
+                        params[k].push(v);
+                    } else {
+                        params[k] = v;
+                    }
+                    e = re.exec(query);
+                }
+                return Suit.Helpers.toCamelCaseObject(params);
+            } else {
+                return query;
+            }
+        };
+        var result = route.exec(fragment).slice(1);
+        for (var i = result.length - 1; i >= 0; i--) {
+            result[i] = parseParams(result[i]);
+        }
+        return result.length > 1 ? result.slice(0, -1) : result;
+    },
+    /**
+      * Override the route function so that a controller get's called on calls after the application is first loaded.
+      * @param {String} route string for the current route being called.
+      * @param {String} name string with the name of the function to be called.
+      * @param {Function} callback function that get's called if the route is matched.
+      */
+    route: function (route, name, callback) {
+        var router = this;
+
+        var routerName = router.className,
+            controller = App.Controllers[routerName],
+            scope = router;
+
+        if (!callback) { callback = this[name]; }
+        if (!callback && controller) {
+            callback = controller[name];
+            scope = controller;
+        }
+
+        var f = function () {
+            var goToRoute = function (args) {
+                App.mainRouter.beforeAll.apply(App.mainRouter, args);
+                callback.apply(scope, args);
+                App.mainRouter.afterAll.apply(App.mainRouter, args);
+            };
+            var routeStripper = /^[#\/]|\s+$/g;
+            var fragment = Backbone.history.fragment;
+            fragment = fragment.replace(routeStripper, '');
+            // find the router, and router this route goes to.
+            var handlers = Backbone.history.handlers;
+            var handler = _.find(handlers, function (h) {
+                if (h.route.test(fragment)) { return true; }
+            });
+
+            window.document.title = _.str.humanize(name);
+
+            // Get all params.
+            var args =  router._extractParameters(handler.route, fragment);
+            if (_.isUndefined(Backbone.history.firstLoad) || Backbone.history.firstLoad) {
+                Backbone.history.firstLoad = false;
+                // Call the router
+                goToRoute(args);
+            } else {
+                // Close all modals if the route changes.
+                Suit.Components.Modal.closeAll();
+
+                // Call the proper controller.
+                var routerName = router.className;
+                if (_.has(App.Controllers, routerName) && _.contains(_.functions(App.Controllers[routerName]), name)) {
+                    controller[name].apply(controller, args);
+                    return false;
+                } else {
+                    goToRoute(args);
+                }
+            }
+        };
+        return Backbone.Router.prototype.route.call(router, route, name, f);
+    }
+});
+
 
 'use strict';
 
@@ -154,84 +1736,6 @@ _.extend(Can.prototype, Events, /** @lends Can.prototype */{
 // Copy the Backbone extend helper function.
 Can.extend = Backbone.Model.extend;
 Suit.Can = new Can();
-
-'use strict';
-
-Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototype */{
-    /**
-      * @class Suit.Collection
-      * @classdesc Suit framework collection class, it is used for storing multiple models.
-      *
-      * <h4>Extending</h4>
-      *
-      * <p><b>var MyCollection = Suit.Collection.extend({});</b></p>
-      *
-      * <p>This will create a collection object with all of the features that Suit.Collection has to offer.</p>
-      *
-      * <h4>Usage:</h4>
-      *
-      * <p>When you decide to create a Collection you should create it with the command line using the following command:<br />
-      * <br />
-      * <b>yo suit:collection [name] [modelName] ...</b></p>
-      *
-      * <p>This will create two files:<br />
-      * <br />
-      * <b>app/collectionss/[name].js</b><br />
-      * <b>spec/collections/[name]_spec.js</b><br />
-      * <br />
-      * These will be a template for testing and basic collection defaults.<br />
-      * <br />
-      * Instantiation:<br />
-      * <br />
-      * <b>var collection = new Suit.Collection()</b></p>
-      *
-      * @augments Backbone.Collection
-      * @constructs Suit.Collection
-      */
-    initialize: function () {},
-    /**
-      * Returns the attribute that will be used to sort the collection
-      * @return {string}
-      */
-    sortBy: 'id',
-    /**
-      * Returns the attribute that will be used to define the direction or order of the sort, values are 'asc' or 'desc'.
-      * @return {string}
-      */
-    sortOrder: 'asc',
-    /** Model to be used with this collection. */
-    model: Suit.Model,
-    /**
-      * Comparator function used by the 'sort()' method in order to sort the collection using the 'sortBy' and 'sortOrder' attributes.
-      * @return {number}
-      */
-    comparator: function (a, b) {
-        if (_.isEmpty(this.sortBy) || _.isEmpty(this.sortOrder)) {
-            return;
-        }
-        var sortBy = this.sortBy.split(':');
-        var attr = sortBy[0];
-        var func = sortBy[1];
-        if (_.isUndefined(func)) {
-            a = a.get(attr);
-            b = b.get(attr);
-        } else {
-            a = a[func]();
-            b = b[func]();
-        }
-        if (_.isString(a)) { a = a.toLowerCase(); }
-        if (_.isString(b)) { b = b.toLowerCase(); }
-
-        if (this.sortOrder === 'asc') {
-            return a > b ?  1 : a < b ? -1 : 0;
-        } else {
-            return a > b ?  -1 : a < b ? 1 : 0;
-        }
-    }
-});
-
-// Extend the RestfulUrls.
-_.extend(Suit.Collection.prototype, Suit.RestfulUrls);
 
 'use strict';
 
@@ -2079,1551 +3583,3 @@ videojs.options.flash.swf = 'bower_components/videojs/dist/video-js/video-js.swf
 
 // Register component.
 Suit.Components.registerComponent('Video');
-
-'use strict';
-
-var Controller = Suit.Controller = function (options) {
-    options = options || {};
-
-    this.initialize.apply(this, arguments);
-};
-
-var Events = Backbone.Events;
-
-_.extend(Controller.prototype, Events, /** @lends Controller.prototype */{
-    /**
-      * @class Suit.Controller
-      * @classdesc Suit frameword controller class that handles fetching data, rendering components, rendering views, updating urls and the page title.
-      *
-      * <h4>Extending</h4>
-      *
-      * <p><b>var MyController = Suit.Controller.extend({});</b></p>
-      *
-      * <p>This will create a controller object with all of the features that Suit.Controller has to offer.</p>
-      *
-      * <h4>Usage:</h4>
-      *
-      * <p>When you decide to create a Controller you should create it with the command line using the following command:<br/>
-      * <br />
-      * <b>yo suit:controller [name]</b></p>
-      *
-      * <p>This will create two files:<br />
-      * <br />
-      * <b>app/controllers/[name].js</b><br />
-      * <b>spec/controlles/[name]_spec.js</b><br />
-      * <br />
-      * These will be a template for testing and basic controller defaults.<br />
-      * <br />
-      * Instantiation:<br />
-      * <br />
-      * <b>var controller = new Suit.Controller()</b></p>
-      *
-      * @constructs Suit.Controller
-      */
-    //initialize: function () {},
-    /**
-      * The _initialize function will check if the current user has permissions to execute the controller
-      * depending on the App.can object.<br />
-      * If the user does not meet the criteria, then it will be sent to redirect url in the object. If not defined,
-      * the user will be redirected to the main page.
-      */
-    initialize: function () {
-        var self = this;
-        // Remove functions that don't need to be authenticated.
-        var functions = _.without(_.functions(this), 'goBack');
-        _.each(functions, function (func) {
-            var actions = _.functions(Events);
-            _.zip(actions, ['initialize', 'constructor']);
-            if (!_.contains(actions, func)) {
-                self[func] = _.wrap(self[func], function (f) {
-                    // Check if the user can access.
-                    if (Suit.Can.go(self.className, func)) {
-                        return f.apply(self, Array.prototype.slice.call(arguments, 1));
-                    }
-                });
-            }
-        });
-    },
-    /**
-      * Set the window.document.title, so that it has a meaningful title
-      * @param {String} title - New title that is going to be applied into
-      */
-    setTitle: function (title) {
-        window.document.title = 'SET - ' + title;
-    },
-    /**
-      * Redirects back to last known route, if any, if not it will use the fallback
-      * URL.
-      * @param {String} fallback - Fallback route, if there is no previous URL
-      * @param {Boolean} trigger - If you want to trigger the navigation
-      */
-    goBack: function (fallback, trigger) {
-        fallback = fallback || null;
-        trigger  = !_.isUndefined(trigger) ? trigger : true;
-
-        var previousRoute = App.routesHistory.previousRoute;
-
-        if (previousRoute) {
-            Backbone.history.navigate(previousRoute, {trigger: trigger});
-        } else if (!previousRoute && fallback) {
-            Backbone.history.navigate(fallback, {trigger: trigger});
-        } else {
-            Backbone.history.navigate('', {trigger: trigger});
-        }
-    }
-});
-
-// Copy the Backbone extend helper function.
-Controller.extend = Backbone.Model.extend;
-
-'use strict';
-
-/**
-  * Helper functions for general use.
-  */
-
-Suit.Helpers = {
-    /** Revert the camelcasing to underscored in order to fullfil api conventions
-    @params {Object} attributes
-    */
-    toJSON: function (attributes) {
-        var self = this;
-        if (_.isArray(attributes) && _.isObject(attributes) && attributes.length > 0 && _.isObject(attributes[0])) {
-            _.each(attributes, function (object, index) {
-                attributes[index] = self.toJSON.apply(self, [object]);
-            });
-        } else if (_.isObject(attributes) && !_.isArray(attributes)) {
-            _.each(_.keys(attributes), function (key) {
-                var value = attributes[key];
-                var newKey = _.str.underscored(key);
-                if (attributes[key]) {
-                    delete attributes[key];
-                }
-                // We need to parse all objects recursive.
-                if (_.isObject(value)) {
-                    attributes[newKey] = self.toJSON.apply(self, [value]);
-                } else {
-                    attributes[newKey] = value;
-                }
-            });
-        }
-        return attributes;
-    },
-    /** Parse server attributes to camelcase in order to fullfil conventions
-    @params {object} response - server response
-     */
-    toCamelCaseObject: function (response) {
-        var self = this;
-        if (_.isArray(response) && _.isObject(response) && response.length > 0 && _.isObject(response[0])) {
-            _.each(response, function (object, index) {
-                response[index] = self.toCamelCaseObject.apply(self, [object]);
-            });
-        } else if (_.isObject(response) && !_.isArray(response)) {
-            _.each(_.keys(response), function (key) {
-                var value = response[key];
-                var newKey = _.str.camelize(key);
-                delete response[key];
-                // We need to parse all objects recursive.
-                if (_.isObject(value)) {
-                    response[newKey] = self.toCamelCaseObject.apply(self, [value]);
-                } else {
-                    response[newKey] = value;
-                }
-            });
-        }
-        return response;
-    },
-    /** Replaces commonly-used Windows 1252 encoded chars that do not exist in ASCII or ISO-8859-1 with ISO-8859-1 cognates.*/
-    convertToUtf8: function (text) {
-        var s = text;
-        if (!_.isString(s)) {
-            return s;
-        }
-        // smart single quotes and apostrophe
-        s = s.replace(/[\u2018]/g, '\'');
-        s = s.replace(/[\u2019]/g, '\'');
-        s = s.replace(/[\u201A]/g, '\'');
-        // smart double quotes
-        s = s.replace(/[\u201C]/g, '\"');
-        s = s.replace(/[\u201D]/g, '\"');
-        s = s.replace(/[\u201E]/g, '\"');
-        // ellipsis
-        s = s.replace(/\u2026/g, '...');
-        // dashes
-        s = s.replace(/[\u2013]/g, '-');
-        s = s.replace(/[\u2014]/g, '-');
-        // circumflex
-        s = s.replace(/\u02C6/g, '^');
-        // open angle bracket
-        s = s.replace(/\u2039/g, '<');
-        // close angle bracket
-        s = s.replace(/\u203A/g, '>');
-        // spaces
-        s = s.replace(/[\u02DC]/g, ' ');
-        s = s.replace(/[\u00A0]/g, ' ');
-        
-        return s;
-    }
-};
-
-/** Formatting helpers for the Suit Framework. This includes the _.str elements */
-Suit.Helpers.Formatters = _.extend(_.str, {
-    /** Formats a date on MM/DD/YYYY way */
-    formatDate: function (date) {
-        if (_.isUndefined(date) || date === '') {
-            return '';
-        } else {
-            return moment(date).format('MM/DD/YYYY');
-        }
-    },
-    /** Formats a number to be separated by commas. */
-    formatNumber: function (num) {
-        if (!_.isUndefined(num) && num !== null) {
-            if (num % 1 !== 0) {
-                num = (parseFloat(num)).toPrecision(3);
-
-                if (String(num).indexOf('0.') === 0) {
-                    num = (parseFloat(num)).toFixed(2);
-                }
-            }
-            return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
-        } else {
-            return 0;
-        }
-    },
-    /** Formats a number and add % symbol at the end */
-    formatNumberPercentage: function (num) {
-        if (!_.isUndefined(num) && num !== null) {
-            if (num % 1 !== 0) {
-                num = (parseFloat(num)).toPrecision(3);
-
-                if (String(num).indexOf('0.') === 0) {
-                    num = (parseFloat(num)).toFixed(2);
-                }
-            }
-            return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') + '%';
-        } else {
-            return 0 + '%';
-        }
-    },
-    /** Formats a number into one decimal place */
-    formatNumberOneDecimal: function (num) {
-        if (!_.isUndefined(num) && num !== null) {
-            if (num % 1 !== 0) {
-                num = (parseFloat(num)).toPrecision(3);
-                num = (parseFloat(num)).toFixed(1);
-            }
-            return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
-        } else {
-            return 0;
-        }
-    },
-    /** Abbreviates a number using K, MM, and B depending on the quantity,
-      * without decimal places */
-    abbreviateNumberNoDecimal: function (num) {
-        if (_.isNull(num) || isNaN(num)) {
-            return '0';
-        } else {
-            var notNegative = true;
-            if (num < 0) {
-                num = num * -1;
-                notNegative = false;
-            }
-            if (num >= 1000000000) {
-                num = num / 1000000000;
-                return notNegative ? Math.round(num) + 'B' : Math.round(num) * -1 + 'B';
-            } else if (num >= 1000000) {
-                num = num / 1000000;
-                return notNegative ? Math.round(num) + 'MM' : Math.round(num) * -1 +  'MM';
-            } else if (num >= 1000) {
-                num = num / 1000;
-                return notNegative ? Math.round(num) + 'K' : Math.round(num) * -1 + 'K';
-            } else {
-                return notNegative ? Math.round(num) : Math.round(num) * -1;
-            }
-        }
-    },
-
-    //* Abbreviates a number using K, MM, and B depending on the quantity 
-    abbreviateNumber: function (num) {
-        if (_.isNull(num) || isNaN(num)) {
-            return '0';
-        } else {
-            if (num >= 1000000000) {
-                num = num / 1000000000;
-                return this.formatNumber(num) + 'B';
-            } else if (num >= 1000000) {
-                num = num / 1000000;
-                return this.formatNumber(num) + 'MM';
-            } else if (num >= 1000) {
-                num = num / 1000;
-                return this.formatNumber(num) + 'K';
-            } else {
-                return this.formatNumber(num);
-            }
-        }
-    },
-    /*
-    Extract all symbols and characters from a string and only leave numbers.
-    @param{String} str - example: $1000 -> 1000
-    */
-    extractNumbersFromString: function (str) {
-        if (str && str.match(/\d+\.?\d*/g)) {
-            return str.match(/\d+\.?\d*/g).join('');
-        }
-        return NaN;
-    },
-    /**Capitalize first letter of a string
-    @params {String} str
-    */
-    capitalize: function (str) {
-        return str.charAt(0).toUpperCase() + str.substring(1).toLowerCase();
-    },
-    secondsToString: function (secs) {
-        var d = moment.duration(secs, 'seconds');
-        var formattedString = '';
-        var hours = d.hours();
-        var minutes = ('0' + d.minutes()).slice(-2);
-        var seconds = ('0' + d.seconds()).slice(-2);
-        if (hours > 0) {
-            hours = ('0' + hours).slice(-2);
-            formattedString += hours + ':';
-        }
-        formattedString += minutes + ':';
-        formattedString += seconds;
-        return formattedString;
-    },
-
-    prepend: function () {
-        var args = Array.prototype.slice.call(arguments);
-        var value = args.shift();
-        return args.join(' ') + ' ' + value;
-    },
-
-    append: function () {
-        var args = Array.prototype.slice.call(arguments);
-        var value = args.shift();
-        return value + ' ' + args.join(' ');
-    },
-
-    replace: function (value, search, replace) {
-        return String(value).replace(search, replace);
-    },
-
-    convertApiURL: function (value) {
-        value = String(value).split('/api/');
-        value = value.length > 1 ? value[value.length - 1] : false;
-        if (value === false) {
-            throw ('Not a valid API url');
-        }
-        return '#' + value.replace('_advertiser', 'advertiser');
-    },
-
-    lowercase: function (value) {
-        return String(value).toLowerCase();
-    },
-
-    uppercase: function (value) {
-        return String(value).toUpperCase();
-    },
-
-    pluralize: function () {
-        return _.pluralize.apply(_, arguments);
-    },
-
-    singularize: function () {
-        return _.singularize.apply(_, arguments);
-    },
-
-    gsub: function () {
-        return _.gsub.apply(_, arguments);
-    },
-
-    ordinalize: function () {
-        return _.ordinalize.apply(_, arguments);
-    }
-
-});
-
-'use strict';
-/**
-  * @class Suit.LocalStorage:
-  *
-  * Its a extention to save suit model information on localStorage.
-  *
-  * Usage:
-  * Initialize a parameter in the model with the name localStorage: true.
-  * If you want the model to save on local cache and the model has no url to save
-  * then pass in the parameter remoteStorage: false.
-  */
-Suit.LocalStorage = {
-    saveToLocalStorage: function (eventName) {
-        if (!this.localStorage || _.isUndefined(this.className)) {
-            return;
-        }
-        //console.info('saveToLocalStorage');
-        var key = this.className + this.id;
-        if (eventName !== 'deleted') {
-            var currentAttr = JSON.parse(localStorage.getItem(key));
-            if (!_.isObject(currentAttr)) {
-                currentAttr = {};
-            }
-            var attributes = this.attributes;
-            _.each(attributes, function (value, k) {
-                currentAttr[k] = value;
-            });
-            //console.info('saving to local storage');
-            localStorage.setItem(key, JSON.stringify(currentAttr));
-        } else {
-            //console.info('destroying from local storage');
-            localStorage.removeItem(key);
-        }
-    },
-    loadFromLocalStorage: function (force) {
-        if (!this.localStorage || _.isUndefined(this.className)) {
-            return;
-        }
-        var key = this.className + this.id;
-        var allAttrs = localStorage.getItem(key);
-
-        // Load if you are forcing it or if it has only the id attribute.
-        if (this.localStorage && (force || ((this.id && _.size(this.attributes) === 1) && !_.isNull(allAttrs)))) {
-            //console.info('loadFromLocalStorage');
-            var self = this;
-            this.attributes = JSON.parse(allAttrs);
-            // We need to trigger the change events on the model for each attribute that was set.
-            this.trigger('change');
-            _.each(allAttrs, function (attr) {
-                self.trigger('change:' + attr);
-            });
-        }
-    }
-};
-
-'use strict';
-
-Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
-    /**
-      * @class Suit.Model
-      * @classdesc Suit framework model class, it's use to map a row in the remote database or to represent an object that stores properties in the front end.
-      *
-      * <h4>Extending</h4>
-      *
-      * <p><b>var MyModel = Suit.Model.extend({});</b></p>
-      *
-      * <p>This will create a model object with all of the features that Suit.Model has to offer.</p>
-      *
-      * <h4>Usage:</h4>
-      *
-      * <p>When you decide to create a Model you should create it with the command line using the following command:<br />
-      * <br />
-      * <b>yo suit:model [name] [attributeName]:[attributeType] [attributeName]:[attributeType]  ...</b></p>
-      *
-      * <p>This will create two files:<br />
-      * <br />
-      * <b>app/models/[name].js</b><br />
-      * <b>spec/model/[name]_spec.js</b><br />
-      * <br />
-      * These will be a template for testing and basic model defaults.<br />
-      * <br />
-      * Instantiation:<br />
-      * <br />
-      * <b>var model = new Suit.Model()</b></p>
-      *
-      * @augments Backbone.Model
-      * @constructs Suit.Model
-      */
-    initialize: function () {},
-    /** Values to override with date/time values */
-    dateAttrs: [],
-    /** Moment formatting for out date/time values during a get */
-    dateFormat: 'YYYY-MM-DD HH:mm:ss',
-    /** Parse server attributes to camelcase in order to fullfil conventions */
-    parse: function (response) {
-        response = Suit.Helpers.toCamelCaseObject.apply(Suit.Helpers, [response]);
-        return response;
-    },
-    /** Revert the camelcasing to underscored in order to fullfil api conventions */
-    toJSON: function () {
-        var attributes = Backbone.RelationalModel.prototype.toJSON.call(this);
-        attributes = Suit.Helpers.toJSON.apply(Suit.Helpers, [attributes]);
-        return attributes;
-    },
-    get: function (attr) {
-        this.loadFromLocalStorage();
-        var date = Backbone.RelationalModel.prototype.get.call(this, attr);
-        if (_.contains(this.dateAttrs, attr) && !_.isUndefined(date) && !_.isEmpty(date)) {
-            return moment(date);
-        } else {
-            return date;
-        }
-    },
-    convertToMoment: function (value, attributeName) {
-        if (!_.isEmpty(this.dateAttrs) && _.contains(this.dateAttrs, attributeName)) {
-            if (_.isUndefined(value) || _.isNull(value) || value === '') {
-                value = '';
-            } else {
-                if (_.isString(value)) {
-                    value = new Date(value);
-                }
-                value = moment(value).format(this.dateFormat);
-            }
-        }
-        return value;
-    },
-    set: function () {
-        var self = this;
-        var attributes = arguments[0],
-          value, options;
-
-        if (_.isObject(attributes)) {
-            options = arguments[1];
-            _.each(attributes, function (value, key) {
-                value = Suit.Helpers.convertToUtf8(value);
-                value = self.convertToMoment(value, key);
-                attributes[key] = value;
-            });
-            return Backbone.RelationalModel.prototype.set.call(this, attributes, options);
-        } else {
-            value = arguments[1];
-            options = arguments[2];
-            value = Suit.Helpers.convertToUtf8(value);
-            value = this.convertToMoment(value, attributes);
-            return Backbone.RelationalModel.prototype.set.call(this, attributes, value, options);
-        }
-    }
-});
-
-// Extend the Backbone Moment Library.
-_.extend(Suit.Model.prototype, Suit.LocalStorage, Suit.Validation, Suit.RestfulUrls);
-
-
-'use strict';
-
-/**
-  * Helper function that generates restful urls for views to use in anchors
-  */
-
-Suit.RestfulUrls = {
-    /** Url used to generate links for this resource.
-        You can override this methods to generate custom functionality.
-    **/
-    _restfulBase: function () {
-        // We need to find a way to extract this into a configuration, so we can pass a regex that will format the url with the proper format per application.
-        var url = _.result(this, 'urlRoot');
-        if (_.isUndefined(url)) {
-            url = _.result(this, 'url');
-            url = url.substr(0, url.lastIndexOf('/'));
-        }
-        return '#' + url.replace('/api/', '').replace('_advertiser', 'advertiser');
-    },
-    /** Show link url helper method. **/
-    showUrl: function () {
-        return this._restfulBase.apply(this) + '/' + this.id;
-    },
-    /** New link url helper method. **/
-    newUrl: function () {
-        return this._restfulBase.apply(this) + '/new';
-    },
-    /** Edit link url helper method. **/
-    editUrl: function () {
-        return this._restfulBase.apply(this) + '/' + this.id + '/edit';
-    },
-    /** Delete link url helper method. **/
-    deleteUrl: function () {
-        return this._restfulBase.apply(this) + '/' + this.id;
-    }
-};
-
-'use strict';
-
-Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
-    /**
-      * @class Suit.Router
-      * @classdesc Suit framework router for basic routing and controller delegation.
-      *
-      * <h4>Extending</h4>
-      *
-      * <p><b>var MyRouter = Suit.Router.extend({});</b></p>
-      *
-      * <h4>Usage</h4>
-      *
-      * <p>When you decide to create a Router you should create it with the command line using the following command:<br/>
-      * <br />
-      * <b>yo suit:router [name]</b></p>
-      *
-      * <p>This will create two files:<br />
-      * <br />
-      * <b>app/routers/[name].js</b><br />
-      * <b>spec/routers/[name]_spec.js</b><br />
-      * <br />
-      * These will be a template for testing and basic router defaults.<br />
-      * <br />
-      * Instantiation:<br />
-      * <br />
-      * <b>var router = new Suit.Router()</b></p>
-      *
-      * @augments Backbone.Router
-      * @constructs Suit.Router
-      */
-    initialize: function () {
-        this.on('all', this.storeRoute);
-    },
-    /**
-      * Stores the route history object, so that we use for history management
-      * purposes (like going to last known route).
-      */
-    storeRoute: function () {
-        // Store new routes only if they changed
-        if (App.routesHistory.currentRoute !== Backbone.history.fragment) {
-            App.routesHistory.previousRoute = App.routesHistory.currentRoute;
-            App.routesHistory.currentRoute = Backbone.history.fragment;
-        }
-    },
-    /**
-      * Override the _extractParameters, method in order to parse parameters that look like query strings
-      * into an object.<br/>
-      * Useful for when you want to parse routes like this:<br />
-      * #status?some=value
-      */
-    _extractParameters: function (route, fragment) {
-        var re = /([^&=]+)=?([^&]*)/g;
-        var decode = function (str) {
-            return decodeURIComponent(str.replace(/\+/g, ' '));
-        };
-        var parseParams = function (query) {
-            if (query && _.contains(query, '=')) {
-                var params = {}, e;
-                e = re.exec(query);
-                while (e) {
-                    var k = decode(e[1]);
-                    var v = decode(e[2]);
-                    if (params[k] !== undefined) {
-                        if (!$.isArray(params[k])) {
-                            params[k] = [params[k]];
-                        }
-                        params[k].push(v);
-                    } else {
-                        params[k] = v;
-                    }
-                    e = re.exec(query);
-                }
-                return Suit.Helpers.toCamelCaseObject(params);
-            } else {
-                return query;
-            }
-        };
-        var result = route.exec(fragment).slice(1);
-        for (var i = result.length - 1; i >= 0; i--) {
-            result[i] = parseParams(result[i]);
-        }
-        return result.length > 1 ? result.slice(0, -1) : result;
-    },
-    /**
-      * Override the route function so that a controller get's called on calls after the application is first loaded.
-      * @param {String} route string for the current route being called.
-      * @param {String} name string with the name of the function to be called.
-      * @param {Function} callback function that get's called if the route is matched.
-      */
-    route: function (route, name, callback) {
-        var router = this;
-
-        var routerName = router.className,
-            controller = App.Controllers[routerName],
-            scope = router;
-
-        if (!callback) { callback = this[name]; }
-        if (!callback && controller) {
-            callback = controller[name];
-            scope = controller;
-        }
-
-        var f = function () {
-            var goToRoute = function (args) {
-                App.mainRouter.beforeAll.apply(App.mainRouter, args);
-                callback.apply(scope, args);
-                App.mainRouter.afterAll.apply(App.mainRouter, args);
-            };
-            var routeStripper = /^[#\/]|\s+$/g;
-            var fragment = Backbone.history.fragment;
-            fragment = fragment.replace(routeStripper, '');
-            // find the router, and router this route goes to.
-            var handlers = Backbone.history.handlers;
-            var handler = _.find(handlers, function (h) {
-                if (h.route.test(fragment)) { return true; }
-            });
-
-            window.document.title = _.str.humanize(name);
-
-            // Get all params.
-            var args =  router._extractParameters(handler.route, fragment);
-            if (_.isUndefined(Backbone.history.firstLoad) || Backbone.history.firstLoad) {
-                Backbone.history.firstLoad = false;
-                // Call the router
-                goToRoute(args);
-            } else {
-                // Close all modals if the route changes.
-                Suit.Components.Modal.closeAll();
-
-                // Call the proper controller.
-                var routerName = router.className;
-                if (_.has(App.Controllers, routerName) && _.contains(_.functions(App.Controllers[routerName]), name)) {
-                    controller[name].apply(controller, args);
-                    return false;
-                } else {
-                    goToRoute(args);
-                }
-            }
-        };
-        return Backbone.Router.prototype.route.call(router, route, name, f);
-    }
-});
-
-
-/** @namespace */
-Suit = {
-    /** @namespace */
-    Components: {}
-};
-'use strict';
-
-/**
-  * Overwrite to default Backbone.sync function. Our implementation executes
-  * some custom events based on Backbone.sync.methodMap (created, update, delete,
-  * patch).
-  */
-var backBoneSync = Backbone.sync;
-Backbone.sync = function (method, model, options) {
-    options = options || {};
-    var success = options.success;
-
-    var eventName = method;
-    options.success = function (resp, status, xhr) {
-        switch (method) {
-            case 'read':
-                eventName = method;
-                break;
-            case 'patch':
-                eventName = 'patched';
-                break;
-            default:
-                eventName = method + 'd';
-        }
-
-        if (success) {
-            success(resp, status, xhr);
-            model.trigger(eventName, model, resp, options);
-        }
-    };
-
-    if (_.contains(_.functions(model), 'saveToLocalStorage')) {
-        model.saveToLocalStorage(eventName);
-    }
-
-    if (_.isUndefined(model.remoteStorage) || model.remoteStorage === true) {
-        backBoneSync(method, model, options);
-    }
-
-};
-this["JST"] = this["JST"] || {};
-
-this["JST"]["suit/components/alert"] = function(obj) {
-obj || (obj = {});
-var __t, __p = '', __e = _.escape;
-with (obj) {
-__p += '<span class=\'icon f-left\'>' +
-((__t = ( alertIcon )) == null ? '' : __t) +
-'</span><span class=\'f-right\'>x</span><p>' +
-((__t = ( message )) == null ? '' : __t) +
-'</p>\n';
-
-}
-return __p
-};
-
-this["JST"]["suit/components/confirm"] = function(obj) {
-obj || (obj = {});
-var __t, __p = '', __e = _.escape;
-with (obj) {
-__p += '<div class=\'title-box clear\'>\n    <h4 class=\'f-left\'>' +
-((__t = ( title )) == null ? '' : __t) +
-'</h4>\n</div>\n<div class=\'content-box\'>\n    <div class=\'grid1\'>\n        <p>' +
-((__t = ( text )) == null ? '' : __t) +
-'</p>\n    </div>\n</div>\n<div class=\'footer-box\'>\n    <button class=\'btn-primary-' +
-((__t = ( color )) == null ? '' : __t) +
-' yes\'>Yes</button> <button class=\'btn-secondary-' +
-((__t = ( color )) == null ? '' : __t) +
-' no\'>No</button>\n</div>';
-
-}
-return __p
-};
-
-this["JST"]["suit/components/graph"] = function(obj) {
-obj || (obj = {});
-var __t, __p = '', __e = _.escape;
-with (obj) {
-__p += '';
-
-}
-return __p
-};
-'use strict';
-/**
-  * @class Suit.Validation:
-  *
-  * This is a helper class that is meant to be used for handling the Model validation
-  * directly on our models. This will allow us to execute validations easily and mantain
-  * all validation logic in one single place.
-  *
-  * @author SET Media, Inc.
-  */
-Suit.Validation = {
-    /** Default patterns */
-    patterns: {
-        // Valid E-mail Address
-        email: /^((([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+(\.([a-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])+)*)|((\x22)((((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(([\x01-\x08\x0b\x0c\x0e-\x1f\x7f]|\x21|[\x23-\x5b]|[\x5d-\x7e]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(\\([\x01-\x09\x0b\x0c\x0d-\x7f]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]))))*(((\x20|\x09)*(\x0d\x0a))?(\x20|\x09)+)?(\x22)))@((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))$/i
-    },
-    /** Default Message Errors */
-    validatorMessages: {
-        required: '{attr} is required.',
-        email: '{attr} is not an e-mail address.',
-        minLengthPass: '{attr} needs to be at least 6 characters long.',
-        min: '{attr} needs to be at least {min} characters long.',
-        max: '{attr} needs to be less than {max} characters long.',
-        range: '{attr} needs to be between {min} and {max}.',
-        dateTime: 'The date and time you introduced was not valid. We like format YYYY/MM/DD HH:MM.',
-        inclusion: '{attr} value in not included in the list of values.',
-        confirmation: '{attr} and it\'s confirmation field do not match.',
-        numeric: '{attr} value must be numeric.'
-    },
-    /** Validator functions */
-    validators: {
-        // Required validation
-        required: function (attr, val) {
-            if (_.isNull(val) ||
-                _.isUndefined(val) ||
-                (_.isString(val) && val.trim() === '') ||
-                (_.isArray(val) && _.isEmpty(val))) {
-                return this.validatorMessages.required.replace('{attr}', _.str.capitalize(attr));
-            }
-        },
-        // E-mail pattern validation
-        email: function (attr, val) {
-            if (!_.str.isBlank(val) && (!_.isString(val) || !val.match(this.patterns.email))) {
-                return this.validatorMessages.email.replace('{attr}', _.str.capitalize(attr));
-            }
-        },
-        // Min length validation
-        min: function (attr, val, min) {
-            if (!_.isString(val) || val.length < min) {
-                return this.validatorMessages.min.replace('{attr}', _.str.capitalize(attr))
-                    .replace('{min}', min.toString());
-            }
-        },
-        // Max length validation.
-        max: function (attr, val, max) {
-            if (!_.isString(val) || val.length > max) {
-                return this.validatorMessages.max.replace('{attr}', _.str.capitalize(attr))
-                    .replace('{max}', max.toString());
-            }
-        },
-        // Range length validation. Range is an array that describes the min and the
-        // max range values.
-        range: function (attr, val, range) {
-            if (!_.isString(val) || val.length < range[0] || val.length > range[1]) {
-                return this.validatorMessages.range.replace('{attr}', _.str.capitalize(attr))
-                    .replace('{min}', range[0].toString())
-                    .replace('{max}', range[1].toString());
-            }
-        },
-        // Password length checker atleast 6 characters long
-        minLengthPass: function (attr, val) {
-            if (!_.isUndefined(val) && val.length < 6) {
-                return this.validatorMessages.minLengthPass.replace('{attr}', _.str.capitalize(attr));
-            }
-        },
-        // Verfies the value in contained in a list.
-        inclusion: function (attr, val, values) {
-            if (!_.isUndefined(val) && !_.contains(values, val)) {
-                return this.validatorMessages.inclusion
-                    .replace('{attr}', _.str.capitalize(attr));
-            }
-        },
-        // Verifies if the field has a confirmation attribute.
-        // Ex. password == passwordConfirmation
-        confirmation: function (attr, val) {
-            var confirmationAttr = this.get(attr + 'Confirmation');
-            if (val && (confirmationAttr !== val)) {
-                return this.validatorMessages.confirmation
-                    .replace('{attr}', _.str.capitalize(attr));
-            }
-        },
-        // Validates if the value introduced is actually a numeric value
-        numeric: function (attr, val) {
-            // Only validates if value is present
-            if (val || val === 0) {
-                val = parseFloat(val);
-                if (!_.isNumber(val) || _.isNaN(val)) {
-                    return this.validatorMessages.numeric
-                        .replace('{attr}', _.str.capitalize(attr));
-                }
-            }
-        },
-    },
-    /** Bootstrap for the validation method, used by the .validate() and .isValid()
-      * methods. This will return an object if the validation didn't pass, or will
-      * not return any value if it passed (according to the Backbone docs) */
-    validate: function (attrs) {
-        var model = this,
-            allAttrs = _.extend({}, model.attributes, attrs),
-            result = this.validateModel(allAttrs);
-
-        // When a validation is executed, we should fire a `validated` event, that
-        // would be handy on the view for showing the errors (if any).
-        _.defer(function () {
-            model.trigger('validated', result.isValid, model, result.invalidAttrs);
-        });
-
-        // We only need to return a value once the validation fails
-        if (!result.isValid) {
-            return result.invalidAttrs;
-        }
-    },
-    /** Validates the entire model, after provided with a list of attributes.
-      * If the validation does not pass, a model containing the `invalidAttrs` will
-      * be provided with a list of attributes that didn't pass the validation.
-      * The object will contain a `isValid` attribute, that describes if the validation
-      * passed or not. */
-    validateModel: function (attrs) {
-        var model = this,
-            invalidAttrs = {},
-            isValid = true;
-
-        // Iterate over each rule and validate every attribute individually
-        _.each(model.validates, function (value, key) {
-            var result = model.validateAttr(key, attrs[key]);
-            if (result && !_.isEmpty(result)) {
-                isValid = false;
-                invalidAttrs[key] = result;
-            }
-        });
-
-        return {
-            invalidAttrs: invalidAttrs,
-            isValid: isValid
-        };
-    },
-    /** Validates a single attribute against a provided value. If the validation
-      * does not pass, then the error message will be returned */
-    validateAttr: function (attr, val) {
-        var model = this,
-            rules = this.validates[attr].rules,
-            error = [];
-
-        // Iterate every rule and validate every rule individually. If more than
-        // one fails, only the last error message will be returned.
-        _.each(rules, function (rule) {
-            var result = false;
-            var args = [attr, val];
-
-            // If our validation needs any extra parameter, then we pass it to
-            // the validator message
-            if (model.validates[attr][rule]) {
-                args.push(model.validates[attr][rule]);
-            }
-
-            // We need to check if this is a default validation or a custom validation
-            // function. Custom validation functions are specified at Model level.
-            if (model.validators[rule]) {
-                result = model.validators[rule].apply(model, args);
-            } else if (_.isFunction(model[rule])) {
-                result = model[rule].apply(model, args);
-            }
-
-            if (result && result.trim() !== '') {
-                error.push(result);
-            }
-        });
-
-        return error;
-    }
-};
-'use strict';
-
-Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
-    /**
-      * @class Suit.View
-      * @classdesc Suit framework view class, it's use to manage the DOM layout and events triggered by the application.
-      *
-      * <h4>Extending</h4>
-      *
-      * <p><b>var MyView = Suit.View.extend({ Suit.View.prototype.initialize.apply(this, this.options); });</b></p>
-      *
-      * <p>This will create a view object with all of the features that Suit.View has to offer.</p>
-      *
-      * <h4>Usage:</h4>
-      *
-      * <p>When you decide to create a View you should create it with the command line using the following command:<br />
-      * <br />
-      * <b>yo suit:view[folderName]/[name]</b></p>
-      *
-      * <p>The folder is optional.</p>
-      *
-      * <p>This will create two files:<br />
-      * <br />
-      * <b>app/views/[folderName]/[name].js</b><br />
-      * <b>spec/views/[folderName]/[name]_spec.js</b><br />
-      * <br />
-      * These will be a template for testing and basic view defaults.<br />
-      * <br />
-      * Instantiation:<br />
-      * <br />
-      * <b>var view = new Suit.View()</b></p>
-      *
-      * @augments Backbone.View
-      * @constructs Suit.View
-      */
-    initialize: function (options) {
-        // This should included in all of the
-        // Suit.View.prototype.initialize.apply(this, this.options);
-        this.viewData = {};
-        options = _.isObject(options) ? options : {};
-        this.options = _.isObject(this.options) ? this.options : {};
-        this.options = _.extend(this.options, options);
-
-        this.setParent(this.options.parent);
-        this.children = this.options.children || [];
-
-        if (!_.isUndefined(this.options.model)) {
-            this.model = this.options.model;
-            this.listenTo(this.model, 'request', this.cleanErrors);
-            this.listenTo(this.model, 'error', this.handleErrors);
-            this.listenTo(this.model, 'validated', this.handleValidation);
-        }
-
-        // Extending child events, to our custom events
-        this.events = _.result(this, 'events') || {};
-        this.events = _.extend({
-            'mouseover .error' : function (event) {
-                var currentTarget = $(event.currentTarget);
-                var key = currentTarget.attr('data-error-key');
-
-                // Since select boxes are "different", we need to actually select
-                // the <select> inside the .select-box
-                if (currentTarget.is('.select-box')) {
-                    key = currentTarget.find('select').attr('data-error-key');
-                }
-
-                // This is a way to actually recalculate the current offset
-                var tooltip = $('body').find('.tooltip[data-error-key="' + key + '"]');
-                tooltip.css({
-                    top: currentTarget.offset().top - tooltip.height() - 12,
-                    left: currentTarget.offset().left
-                }).show();
-            },
-            'mouseout .error' : function (event) {
-                var currentTarget = $(event.currentTarget);
-                var key = currentTarget.attr('data-error-key');
-                if (currentTarget.is('.select-box')) {
-                    key = currentTarget.find('select').attr('data-error-key');
-                }
-                $('body').find('.tooltip[data-error-key="' + key + '"]').hide();
-            },
-            // We are going to listen to form events and trigger them with our custom logic.
-            'submit' : function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                var form = $(event.target);
-                var action = form.attr('action');
-                var method = (form.attr('method') || 'GET').toUpperCase();
-                var attrs = form.serialize();
-                var url = action;
-                if (method === 'GET') {
-                    url += '?' + attrs;
-                }
-                App.request.params = self.serializeObject();
-                Backbone.history.navigate(url, {trigger: true});
-            }
-        }, this.events);
-
-        // Here we will wrap the render and close events.
-        var self = this;
-        // Render
-        _.bindAll(this, 'render');
-        this.render = _.wrap(this.render, function (render) {
-            self._beforeRender();
-            self.trigger('onRender');
-            render();
-            self._afterRender();
-            return self;
-        });
-        // Close
-        _.bindAll(this, 'close');
-        this.close = _.wrap(this.close, function (close) {
-            self._beforeClose();
-            self.trigger('onClose');
-            close();
-            self._afterClose();
-            return self;
-        });
-
-        // Listen to the user permissions in order to remove elements that they should not see.
-        if (App.currentUser) {
-            this.listenTo(App.currentUser, 'change:permission', this._removeUnauthorizedElements);
-        }
-
-        // Attach this view to the el data('view') property for later use.
-        this.$el.data('view', this);
-    },
-    /** Applying formatter functionality in our views */
-    formatters: Suit.Helpers.Formatters,
-    /**
-    *   Cleans error tag when form is submitted or model is saved
-    */
-    cleanErrors: function () {
-        this.$el.find('.error').removeClass('error');
-        $('body').find('.tooltip[data-error-key]').remove();
-    },
-    /**
-      * Handles server response errors for inputs on the view.
-      * @param {Suit.Model} model
-      * @param {Object} response
-    */
-    handleErrors: function (model, response) {
-        var self = this;
-        if (!_.isUndefined(response) && (response.status === 400 || response.status === 422)) {
-            var jsonResponse = JSON.parse(response.responseText);
-            _.each(jsonResponse, function (val, key) {
-                self.showVisualError(key, val);
-            });
-        }
-    },
-    /**
-      * Handles front-end validation (at client side)
-      * @param {Bool} isValid - Determines if the validation passed or not
-      * @param {Suit.Model} model - Model that is being validated
-      * @param {Object} invalidAttrs - Object with the list of invalid attrs
-      */
-    handleValidation: function (isValid, model, invalidAttrs) {
-        var self = this;
-        this.cleanErrors();
-
-        if (!isValid) {
-            _.each(invalidAttrs, function (value, key) {
-                self.showVisualError(key, value);
-            });
-        }
-    },
-    /**
-      * Handles the visual error show on the form inputs, based on the received
-      * key.
-      * @param {String} key - Form key
-      */
-    showVisualError: function (key, value) {
-        var underscoredKey = _.str.underscored(key);
-        var inputElem = this.$el.find('[name="' + key + '"], [data-name="' + key + '"], [name="' + underscoredKey + '"], [data-name="' + underscoredKey + '"]');
-        if (inputElem.length > 0) {
-            if (inputElem.prop('type') === 'select-one') {
-                inputElem.parent().addClass('error');
-            } else {
-                inputElem.addClass('error');
-            }
-
-            // Add key reference, for further use
-            inputElem.attr('data-error-key', key);
-
-            // If the value is a list of errors, we should show them in a list
-            var content = _.isArray(value) ? value.join('<br />') : value;
-
-            // Add tooltip element
-            var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
-            $('body').append(tooltip);
-        }
-    },
-    /**
-      * Sets the parent view for this view and adds this view as one of it's child.
-      * @param {Suit.View} parent
-      */
-    setParent: function (parent) {
-        this.parent = parent;
-        if (!_.isUndefined(this.parent)) {
-            this.parent.children.push(this);
-            this.parent.children = _.uniq(this.parent.children);
-            this.listenTo(this.parent, 'onClose', this.close);
-        }
-    },
-    /**
-      * Sets a view as a child and this view as a parent.
-      * @param {Suit.View} child
-      */
-    setChild: function (child) {
-        child.setParent(this);
-    },
-    /**
-      * Searches the DOM under the view and returns the Jquery element that matches the selector or the view's element
-      if the selector is undefined.
-      * @param {string} selector
-      * @return {element}
-      */
-    find: function (selector) {
-        if (_.isUndefined(selector)) {
-            return this.$el;
-        }
-        return this.$el.find(selector);
-    },
-    /**
-      * It finds the closes parent view for a selector. Useful when adding a child view using a selector and there is another
-      * child view in between.
-      * @param {string} selector
-      * @return {Suit.View}
-      */
-    findClosestParentView: function (selector) {
-        var el = this.find(selector);
-        if (el === this.$el) {
-            return this;
-        } else if (!_.isUndefined(el.data('view'))) {
-            return el.data('view');
-        } else {
-            var parent = _.find(el.parents(), function (parent) {
-                return !_.isUndefined($(parent).data('view'));
-            });
-            if (!_.isUndefined(parent)) {
-                return $(parent).data('view');
-            } else {
-                return undefined;
-            }
-        }
-    },
-    /**
-      * Appends a view to this view to the root element or the selector.
-      * @param {Suit.View} view
-      * @param {string} selector
-      */
-    appendView: function (view, selector) {
-        // Check which is the closes view before appending.
-        var parentView = this.findClosestParentView(selector);
-        var el = this.find(selector);
-        view.setParent(parentView);
-        el.append(view.el);
-        view.render();
-        return this;
-    },
-    /**
-      * Prepends a view to this view to the root element or the selector.
-      * @param {Suit.View} view
-      * @param {string} selector
-      */
-    prependView: function (view, selector) {
-        // Check which is the closes view before prepending.
-        var parentView = this.findClosestParentView(selector);
-        var el = this.find(selector);
-        view.setParent(parentView);
-        el.prepend(view.el);
-        view.render();
-        return this;
-    },
-    /**
-      * Replaces the html content of the root element or the selector of this view with another view.
-      * @param {Suit.View} view
-      * @param {string} selector
-      */
-    htmlView: function (view, selector) {
-        this.empty(selector);
-        this.appendView(view, selector);
-        return this;
-    },
-    noData: function (selector) {
-        var el = this.find(selector);
-
-        if (el.find('.no-data').length === 0) {
-            var parent = el.parent();
-            var height = el.outerHeight();
-            var width = el.outerWidth();
-
-            var divElem = $('<div class="no-data bgc-light-grey p-absolute ta-center fs-20"></div>');
-
-            parent.data('original-position', parent.css('position'));
-            parent.css('position', 'relative');
-
-            divElem.html('Ø NO DATA FOR SELECTED TIMEFRAME');
-            divElem.css('line-height', height + 'px');
-            divElem.css('vertical-align', 'middle');
-            divElem.css('width', width + 'px');
-            divElem.css('height', height + 'px');
-            divElem.css('top', 0);
-            divElem.css('left', 0);
-            el.append(divElem);
-        }
-    },
-    removeNoData: function (selector) {
-        var el = this.find(selector);
-        var parent = el.parent();
-        var noDataEl = el.find('.no-data');
-        noDataEl.remove();
-        parent.css('position', parent.data('original-position'));
-    },
-    /**
-      * Displays loader for the current view selector.
-      * Example usage: view.loader({selector: '.anyClass', loaderSize: 'small', tone: 'light'});
-      *
-      * @param {Object}
-      * object.selector
-      * object.loaderSize - large or small default is large.
-      * object.tone - dark or light default is dark.
-    **/
-    loader: function (object) {
-        var el;
-        if (object && object.selector) {
-            el  = this.find(object.selector);
-        } else {
-            el = this.$el;
-        }
-        var parent = el.parent();
-        var height = el.outerHeight();
-        var width = el.outerWidth();
-
-        var divElem = $('<div class="loader"></div>');
-
-        if (object && object.loaderSize === 'small') {
-            divElem.addClass('small');
-        }
-
-        if (object && object.tone === 'light') {
-            divElem.addClass('light');
-        }
-
-        parent.data('original-position', parent.css('position'));
-        parent.css('position', 'relative');
-        divElem.css('width', width + 'px');
-        divElem.css('height', height + 'px');
-        divElem.css('top', 0);
-        divElem.css('left', 0);
-        el.append(divElem);
-    },
-    /**
-    Remove the loader from the view
-    @params {String} selector.
-    */
-    removeLoader: function (selector) {
-        var el = this.find(selector);
-        var parent = el.parent();
-        var loader = el.find('.loader');
-        loader.remove();
-        parent.css('position', parent.data('original-position'));
-    },
-    /**
-      * Empty's the content of the views element or an specific selector.
-      * @param {string} selector
-      */
-    empty: function (selector) {
-        this.closeChildren(selector);
-        this.find(selector).empty();
-    },
-    /**
-      * It fetches all the children for a view using the passed selector to search the DOM under the view.
-      * @param {string} selector
-      * @return {array} array of children views.
-      */
-    findChildrenBySelector: function (selector) {
-        if (!_.isUndefined(selector)) {
-            var closestParent = this.findClosestParentView(selector);
-            if (!_.isUndefined(closestParent)) {
-                var el = closestParent.find(selector).get(0);
-                return _.filter(closestParent.children, function (child) {
-                    return child.$el === el || _.contains(child.$el.parents(), el);
-                });
-            }
-        }
-        return this.children;
-    },
-    /**
-      * It closes child views using the passed selector by removing them for DOM and clearing their events.
-      * @param {string} selector
-      */
-    closeChildren: function (selector) {
-        var children = this.findChildrenBySelector(selector);
-        for (var i = children.length - 1; i >= 0; i--) {
-            children[i].close();
-        }
-    },
-    /**
-      * It handles before close events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
-      */
-    _beforeClose: function () {
-        if (this._rivets) {
-            this._rivets.unbind();
-        }
-        this.$('.error').off('hover');
-        this.trigger('beforeClose');
-        this.beforeClose();
-        // Remove from parent children.
-        if (!_.isUndefined(this.parent)) {
-            var index = this.parent.children.indexOf(this);
-            if (index >= 0) {
-                this.parent.children.splice(index, 1);
-            }
-            this.parent = undefined;
-        }
-        this.trigger('onClose');
-        this.unbind();
-        if (!_.isUndefined(this.$el)) {
-            this.$el.unbind();
-        }
-        // Detach all events and remove all JQuery children form DOM and clean up.
-        if (!_.isUndefined(this.$el)) {
-            _.each(this.$el.find('*'), function (el) {
-                el = $(el);
-                el.unbind();
-                el.remove();
-            });
-        }
-    },
-    /** Method to be implemented for before close handling. */
-    beforeClose: function () {
-        // Override and implement your before render logic.     
-    },
-    /**
-      * It closes the view by removing it from DOM, clearing all event and closing all child views.
-      */
-    close: function (event) {
-        // Prevent defaults if it's called by an actual object on the view.
-        if (event instanceof Event) {
-            event.preventDefault();
-        }
-        if (!_.isUndefined(this.$el)) {
-            this.remove(); // <<< remove does two things, this.$el.remove() and also this.stopListening()
-        } else {
-            this.stopListening();
-        }
-        if (!_.isUndefined(this.$el)) {
-            delete this.$el;
-        }
-        delete this.el;
-    },
-    /**
-      * It handles after close events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
-      */
-    _afterClose: function () {
-        this.trigger('afterClose');
-        this.afterClose();
-    },
-    /** Method to be implemented for after render handling. */
-    afterClose: function () {
-        // Override and implement your after close logic.
-    },
-    /**
-      * It handles before render events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
-      */
-    _beforeRender: function () {
-        this.trigger('beforeRender');
-        this.beforeRender();
-    },
-    /** Method to be implemented for before render handling. */
-    beforeRender: function () {
-        // Override and implement your before render logic.
-    },
-    /** Render function for the view */
-    render: function () {
-        this.empty();
-        this.$el.html(this.template(this));
-        return this;
-    },
-    /**
-      * It handles after render events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
-      */
-    _afterRender: function () {
-        var self = this;
-        this.initializeComponents();
-        // Remove the data-role components not visible to some users.
-        this._removeUnauthorizedElements();
-        //we have to wait for compnents to initialize before the render.
-        // _.defer(function () {
-
-        if (this._rivets) {
-            this._rivets.unbind();
-        }
-        this._rivets = window.rivets.bind(this.el, this);
-
-        // If we are re-rendering, we need to keep focus on first element with autofocus
-        var autoFocused = self.find('input[autofocus]:first');
-        if (!_.isEmpty(autoFocused)) {
-            _.defer(function () { autoFocused.focus(); });
-        }
-
-        self.trigger('afterRender');
-        self.afterRender();
-        // });
-    },
-    /** This checks the current user's permission is present in the data-permissions attributes.
-     * The roles will be separated by commas.
-     */
-    _removeUnauthorizedElements: function () {
-        if (!App.currentUser || !this.el) { return; }
-        var self = this;
-        var elements = this.find('[data-permissions]');
-        var permission = App.currentUser.get('permission');
-
-        _.each(elements, function (el) {
-            el = $(el);
-            var permissions = el.attr('data-permissions').replace(/ /g, '').split(',');
-            if (!_.contains(permissions, permission)) {
-                // We need to figure out if this is a view or just a simple element.
-                var view = el.data('view');
-                if (view) {
-                    view.close();
-                } else {
-                    self.empty(el);
-                    el.remove();
-                }
-            }
-        });
-    },
-    /** Method to be implemented for after render handling. */
-    afterRender: function () {
-        // Override and implement your after render logic.
-    },
-    /** Use for Suit Component management. It searches for uninitialized components inside the view in order to
-      * properly initialized them. */
-    initializeComponents: function () {
-        var self = this;
-        _.each(Suit.Components.registeredComponents, function (component) {
-            var foundElements = self.$el.find('.' + _.str.dasherize(component).slice(1));
-            // For each found element we need to figure out if it has a compoment,
-            // if it's initialized and attached to the view as a child.
-            if (foundElements.length > 0) {
-                _.each(foundElements, function (fc) {
-                    var elementView = $(fc).data('view');
-                    if (_.isUndefined(elementView)) {
-                        var c = new Suit.Components[component]({el: fc});
-                        c.setParent(self);
-                    } else {
-                        elementView.setParent(self);
-                    }
-                });
-            }
-        });
-    },
-    /** Serializer for the form components, useful for converting form elements into
-      * a JavaScript object, and then hit the service with this data */
-    serializeObject: function (el) {
-        el = el || 'form';
-        var o = {};
-        var a = this.find(el + ' :input').serializeArray();
-
-        $.each(a, function () {
-            var keyName = _.str.camelize(this.name);
-
-            if (o[keyName]) {
-                if (!o[keyName].push) {
-                    o[keyName] = [o[keyName]];
-                }
-                o[keyName].push(this.value || '');
-            } else {
-                o[keyName] = this.value || '';
-            }
-        });
-
-        return o;
-    }
-});
