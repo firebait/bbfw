@@ -36,7 +36,7 @@ module.exports = function (grunt) {
             js: {
                 files: [
                     '<%= src.path %>/suit.js',
-                    '<%= src.path %>/templates.js',
+                    '<%= src.path %>/suit_templates.js',
                     '<%= src.path %>/helpers.js',
                     '<%= src.path %>/restful_urls.js',
                     '<%= src.path %>/sync.js',
@@ -76,7 +76,7 @@ module.exports = function (grunt) {
                 'Gruntfile.js',
                 '<%= watch.js.files %>',
                 '<%= watch.jstest.files %>',
-                '!<%= src.path %>/templates.js',
+                '!<%= src.path %>/suit_templates.js',
                 '!<%= src.testPath %>/helpers.js'
             ]
         },
@@ -90,7 +90,7 @@ module.exports = function (grunt) {
             },
             compile: {
                 files: [{
-                    '<%= src.path %>/templates.js': ['<%= watch.jst.files %>']
+                    '<%= src.path %>/suit_templates.js': ['<%= watch.jst.files %>']
                 }]
             }
         },
@@ -191,7 +191,7 @@ module.exports = function (grunt) {
 
         uglify: {
             '<%= dist.path %>/suit.min.js': '<%= dist.path %>/suit.js',
-            '<%= dist.path %>/templates.min.js': '<%= src.path %>/templates.js'
+            '<%= dist.path %>/suit_templates.min.js': '<%= src.path %>/suit_templates.js'
         },
 
         jsdoc: {
@@ -216,8 +216,10 @@ module.exports = function (grunt) {
             tasks.push('jasmine');
         } else if (target === 'browser') {
             tasks.push('jasmine:all:build', 'connect:test:keepalive');
-        } else {
+        } else if (target === 'server') {
             tasks.push('jasmine', 'watch');
+        } else {
+            tasks.push('jasmine');
         }
 
         console.log(tasks);
