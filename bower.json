@@ -28,7 +28,7 @@
   ],
   "dependencies": {
     "jquery": "~2.1.0",
-    "underscore": "~1.6.0",
+    "underscore": "~1.7.0",
     "backbone": "~1.1.0",
     "backbone-relational": "~0.8.7",
     "rivets": "~0.6.10",
