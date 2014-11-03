@@ -51,6 +51,10 @@ module.exports = function (grunt) {
                     '<%= src.path %>/can.js',
                     '<%= src.path %>/component.js',
                     '<%= src.path %>/components/*.js',
+                    '<%= src.path %>/rivets_config.js',
+                    '<%= src.path %>/rivets_adapter.js',
+                    '<%= src.path %>/rivets_formatters.js',
+                    '<%= src.path %>/rivets_binders.js',
                     '<%= src.testPath %>/**/*.js',
                 ],
                 tasks: ['jshint']
@@ -185,7 +189,11 @@ module.exports = function (grunt) {
                 '<%= src.path %>/router.js',
                 '<%= src.path %>/can.js',
                 '<%= src.path %>/component.js',
-                '<%= src.path %>/components/**/*.js'
+                '<%= src.path %>/components/**/*.js',
+                '<%= src.path %>/rivets_config.js',
+                '<%= src.path %>/rivets_adapter.js',
+                '<%= src.path %>/rivets_formatters.js',
+                '<%= src.path %>/rivets_binders.js',
             ]
         },
 
