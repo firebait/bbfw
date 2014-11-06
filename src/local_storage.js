@@ -14,7 +14,6 @@ Suit.LocalStorage = {
         if (!this.localStorage || _.isUndefined(this.className)) {
             return;
         }
-        //console.info('saveToLocalStorage');
         var key = this.className + this.id;
         if (eventName !== 'deleted') {
             var currentAttr = JSON.parse(localStorage.getItem(key));
@@ -25,10 +24,8 @@ Suit.LocalStorage = {
             _.each(attributes, function (value, k) {
                 currentAttr[k] = value;
             });
-            //console.info('saving to local storage');
             localStorage.setItem(key, JSON.stringify(currentAttr));
         } else {
-            //console.info('destroying from local storage');
             localStorage.removeItem(key);
         }
     },
@@ -41,7 +38,6 @@ Suit.LocalStorage = {
 
         // Load if you are forcing it or if it has only the id attribute.
         if (this.localStorage && (force || ((this.id && _.size(this.attributes) === 1) && !_.isNull(allAttrs)))) {
-            //console.info('loadFromLocalStorage');
             var self = this;
             this.attributes = JSON.parse(allAttrs);
             // We need to trigger the change events on the model for each attribute that was set.
