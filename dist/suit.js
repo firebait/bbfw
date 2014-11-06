@@ -3734,7 +3734,7 @@ Suit.Components.registerComponent('Video');
 'use strict';
 
 // Start application.
-if (_.isUndefined(jasmine)) {
+if (_.isUndefined(window.jasmine)) {
     $(function () {
         // Prepare the body.
         $('body').prepend(App.mainView.render().el);
