@@ -10,6 +10,13 @@ Backbone.sync = function (method, model, options) {
     options = options || {};
     var success = options.success;
 
+    // Check if the event is coming from Rivets
+    var evt = options.originalEvent;
+    var el = $(evt.srcElement);
+    if (evt.type == 'submit' && el.is('form')) {
+        options.type = evt.type = el.attr('method') ? el.attr('method') : 'GET';
+    }
+
     var eventName = method;
     options.success = function (resp, status, xhr) {
         switch (method) {
