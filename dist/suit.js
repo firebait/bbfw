@@ -3170,8 +3170,8 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
             this.listenTo(this.collection, 'add', this.addOne);
             this.listenTo(this.collection, 'remove', this.removeOne);
             this.listenTo(this, 'afterRender', this.renderCollection);
+            Suit.Component.prototype.initialize.apply(this, [options]);
         }
-        Suit.Component.prototype.initialize.apply(this, [options]);
     },
     /** View for the Table View Rows */
     dataTableView: Suit.View,
