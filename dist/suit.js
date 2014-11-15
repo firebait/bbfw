@@ -3322,7 +3322,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 });
 
 // Register component.
-Suit.Components.registerComponent('SuitTable');
+Suit.Components.registerComponent('Table');
 
 'use strict';
 
