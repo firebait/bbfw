@@ -8,7 +8,8 @@
                 val = $target.val(),
                 args = [event, target];
             if ($target.is(':input')) {
-                val += (event.type === 'keypress') ?  String.fromCharCode(event.charCode) : '';
+                var code = event.charCode || event.keyCode;
+                val += (event.type === 'keypress') ?  String.fromCharCode(code) : '';
                 args.unshift(val);
             }
             this.apply(binding.model, args);

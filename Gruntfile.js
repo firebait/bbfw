@@ -55,8 +55,7 @@ module.exports = function (grunt) {
                     '<%= src.path %>/rivets_adapter.js',
                     '<%= src.path %>/rivets_formatters.js',
                     '<%= src.path %>/rivets_binders.js',
-                    '<%= src.path %>/start.js',
-                    '<%= src.testPath %>/**/*.js',
+                    '<%= src.path %>/start.js'
                 ],
                 tasks: ['jshint']
             },

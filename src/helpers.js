@@ -8,7 +8,7 @@ Suit.Helpers = {
     /** Revert the camelcasing to underscored in order to fullfil api conventions
     @params {Object} attributes
     */
-    toJSON: function (attributes) {
+    toUnderscoredObject: function (attributes) {
         var self = this;
         if (_.isArray(attributes) && _.isObject(attributes) && attributes.length > 0 && _.isObject(attributes[0])) {
             _.each(attributes, function (object, index) {
@@ -30,6 +30,12 @@ Suit.Helpers = {
             });
         }
         return attributes;
+    },
+    /** Alias for toUnderscoredObject
+    @params {Object} attributes
+    */
+    toJSON: function (attributes) {
+        return this.toUnderscoredObject(attributes);
     },
     /** Parse server attributes to camelcase in order to fullfil conventions
     @params {object} response - server response
@@ -83,7 +89,7 @@ Suit.Helpers = {
         // spaces
         s = s.replace(/[\u02DC]/g, ' ');
         s = s.replace(/[\u00A0]/g, ' ');
-        
+
         return s;
     }
 };
@@ -110,23 +116,12 @@ Suit.Helpers.Formatters = _.extend(_.str, {
             }
             return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
         } else {
-            return 0;
+            return String(0);
         }
     },
     /** Formats a number and add % symbol at the end */
     formatNumberPercentage: function (num) {
-        if (!_.isUndefined(num) && num !== null) {
-            if (num % 1 !== 0) {
-                num = (parseFloat(num)).toPrecision(3);
-
-                if (String(num).indexOf('0.') === 0) {
-                    num = (parseFloat(num)).toFixed(2);
-                }
-            }
-            return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,') + '%';
-        } else {
-            return 0 + '%';
-        }
+        return this.formatNumber(num) + '%';
     },
     /** Formats a number into one decimal place */
     formatNumberOneDecimal: function (num) {
@@ -137,7 +132,7 @@ Suit.Helpers.Formatters = _.extend(_.str, {
             }
             return String(num).replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1,');
         } else {
-            return 0;
+            return String(0);
         }
     },
     /** Abbreviates a number using K, MM, and B depending on the quantity,
@@ -161,12 +156,12 @@ Suit.Helpers.Formatters = _.extend(_.str, {
                 num = num / 1000;
                 return notNegative ? Math.round(num) + 'K' : Math.round(num) * -1 + 'K';
             } else {
-                return notNegative ? Math.round(num) : Math.round(num) * -1;
+                return notNegative ? String(Math.round(num)) : String(Math.round(num) * -1);
             }
         }
     },
 
-    //* Abbreviates a number using K, MM, and B depending on the quantity 
+    //* Abbreviates a number using K, MM, and B depending on the quantity
     abbreviateNumber: function (num) {
         if (_.isNull(num) || isNaN(num)) {
             return '0';
@@ -216,16 +211,18 @@ Suit.Helpers.Formatters = _.extend(_.str, {
         return formattedString;
     },
 
+    /** Prepends a string to a sentence (good for prepending a class) */
     prepend: function () {
         var args = Array.prototype.slice.call(arguments);
         var value = args.shift();
-        return args.join(' ') + ' ' + value;
+        return value + ' ' + args.join(' ');
     },
 
+    /** Append a string to a sentence (good for apending a class) */
     append: function () {
         var args = Array.prototype.slice.call(arguments);
         var value = args.shift();
-        return value + ' ' + args.join(' ');
+        return args.join(' ') + ' ' + value;
     },
 
     replace: function (value, search, replace) {

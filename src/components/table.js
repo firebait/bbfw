@@ -24,10 +24,12 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
       * @constructs Suit.Components.Table
       */
     initialize: function (options) {
-        this.listenTo(this.collection, 'reset sort', this.renderCollection);
-        this.listenTo(this.collection, 'add', this.addOne);
-        this.listenTo(this.collection, 'remove', this.removeOne);
-        this.listenTo(this, 'afterRender', this.renderCollection);
+        if (this.collection) {
+            this.listenTo(this.collection, 'reset sort', this.renderCollection);
+            this.listenTo(this.collection, 'add', this.addOne);
+            this.listenTo(this.collection, 'remove', this.removeOne);
+            this.listenTo(this, 'afterRender', this.renderCollection);
+        }
         Suit.Component.prototype.initialize.apply(this, [options]);
     },
     /** View for the Table View Rows */
