@@ -3594,7 +3594,7 @@ Suit.Components.registerComponent('Video');
         prefix: 'suit',
         handler: function (target, event, binding) {
             if (binding.model instanceof Suit.Model) {
-                this.apply(binding.model, []);
+                return this.apply(binding.model, []);
             }
             var $target = $(target),
                 val = $target.val(),
