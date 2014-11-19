@@ -121,7 +121,7 @@ Suit.Helpers.Formatters = _.extend(_.str, {
     },
     /** Formats a number and add % symbol at the end */
     formatNumberPercentage: function (num) {
-        return this.formatNumber(num) + '%';
+        return Suit.Helpers.Formatters.formatNumber(num) + '%';
     },
     /** Formats a number into one decimal place */
     formatNumberOneDecimal: function (num) {
@@ -168,15 +168,15 @@ Suit.Helpers.Formatters = _.extend(_.str, {
         } else {
             if (num >= 1000000000) {
                 num = num / 1000000000;
-                return this.formatNumber(num) + 'B';
+                return Suit.Helpers.Formatters.formatNumber(num) + 'B';
             } else if (num >= 1000000) {
                 num = num / 1000000;
-                return this.formatNumber(num) + 'MM';
+                return Suit.Helpers.Formatters.formatNumber(num) + 'MM';
             } else if (num >= 1000) {
                 num = num / 1000;
-                return this.formatNumber(num) + 'K';
+                return Suit.Helpers.Formatters.formatNumber(num) + 'K';
             } else {
-                return this.formatNumber(num);
+                return Suit.Helpers.Formatters.formatNumber(num);
             }
         }
     },
