@@ -123,7 +123,7 @@ module.exports = function (grunt) {
                         'bower_components/backbone/backbone.js',
                         'bower_components/backbone-relational/backbone-relational.js',
                         'bower_components/rivets/dist/rivets.min.js',
-                        'bower_components/momentjs/moment.js',
+                        'bower_components/moment/moment.js',
                         'bower_components/moment-timezone/moment-timezone.js',
                         'bower_components/underscore.string/dist/underscore.string.min.js',
                         'bower_components/underscore.inflection/lib/underscore.inflection.js',

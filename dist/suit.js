@@ -3479,7 +3479,13 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
 
         //query parameter
         if (el.attr('data-param')) {
-            url = url + '?' + el.attr('data-param') + '=%QUERY';//%QUERY is used to replace the value of the query.
+            var queryString = el.attr('data-param') + '=%QUERY', //%QUERY is used to replace the value of the query.
+            urlArray = url.split('?');
+            url = urlArray[0];
+            if (urlArray[1]) {
+                queryString += '&' + urlArray[1];
+            }
+            url = url + '?' + queryString;
         }
 
         //server return limit.
