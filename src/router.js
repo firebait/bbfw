@@ -102,10 +102,11 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
         }
 
         var f = function () {
+
             var goToRoute = function (args) {
-                App.mainRouter.beforeAll.apply(App.mainRouter, args);
+                if (router.beforeEach) { router.beforeEach.apply(router, args); }
                 callback.apply(scope, args);
-                App.mainRouter.afterAll.apply(App.mainRouter, args);
+                if (router.afterEach) { router.afterEach.apply(router, args); }
             };
             var routeStripper = /^[#\/]|\s+$/g;
             var fragment = Backbone.history.fragment;
@@ -118,24 +119,34 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
 
             window.document.title = _.str.humanize(name);
 
-            // Get all params.
-            var args =  router._extractParameters(handler.route, fragment);
-            if (_.isUndefined(Backbone.history.firstLoad) || Backbone.history.firstLoad) {
-                Backbone.history.firstLoad = false;
-                // Call the router
-                goToRoute(args);
-            } else {
-                // Close all modals if the route changes.
-                Suit.Components.Modal.closeAll();
+            // Close all modals if the route changes.
+            Suit.Components.Modal.closeAll();
 
-                // Call the proper controller.
-                var routerName = router.className;
-                if (_.has(App.Controllers, routerName) && _.contains(_.functions(App.Controllers[routerName]), name)) {
-                    controller[name].apply(controller, args);
-                    return false;
+            // Get all params.
+            var args = router._extractParameters(handler.route, fragment);
+
+            if (App.currentRouter !== router) {
+                App.currentRouter = router;
+                // On first load of the page.
+                if (_.isUndefined(Backbone.history.firstLoad) || Backbone.history.firstLoad) {
+                    Backbone.history.firstLoad = false;
+                    App.mainRouter.beforeAll.apply(App.mainRouter, args);
+                    // Call the router
+                    goToRoute(args);
+                    App.mainRouter.afterAll.apply(App.mainRouter, args);
                 } else {
                     goToRoute(args);
                 }
+                return;
+            }
+
+            // Call the proper controller.
+            var routerName = router.className;
+            if (_.has(App.Controllers, routerName) && _.contains(_.functions(App.Controllers[routerName]), name)) {
+                controller[name].apply(controller, args);
+                return false;
+            } else {
+                goToRoute(args);
             }
         };
         return Backbone.Router.prototype.route.call(router, route, name, f);
