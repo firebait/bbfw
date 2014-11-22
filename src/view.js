@@ -474,10 +474,21 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     },
     /** Render function for the view */
     render: function () {
-        this.empty();
-        this.$el.html(this.template(this));
+        if (this.template) {
+            this.empty();
+            this.$el.html(this.template(this));
+        }
         return this;
     },
+
+    /*** Binds Rivets to View ***/
+    initRivets: function () {
+        if (this._rivets) {
+            this._rivets.unbind();
+        }
+        this._rivets = window.rivets.bind(this.el, this);
+    },
+
     /**
       * It handles after render events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
       */
@@ -489,10 +500,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         //we have to wait for compnents to initialize before the render.
         // _.defer(function () {
 
-        if (this._rivets) {
-            this._rivets.unbind();
-        }
-        this._rivets = window.rivets.bind(this.el, this);
+        this.initRivets();
 
         // If we are re-rendering, we need to keep focus on first element with autofocus
         var autoFocused = self.find('input[autofocus]:first');

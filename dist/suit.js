@@ -1239,10 +1239,21 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     },
     /** Render function for the view */
     render: function () {
-        this.empty();
-        this.$el.html(this.template(this));
+        if (this.template) {
+            this.empty();
+            this.$el.html(this.template(this));
+        }
         return this;
     },
+
+    /*** Binds Rivets to View ***/
+    initRivets: function () {
+        if (this._rivets) {
+            this._rivets.unbind();
+        }
+        this._rivets = window.rivets.bind(this.el, this);
+    },
+
     /**
       * It handles after render events in for the Suit framework exclusively, DO NOT OVERRIDE IT!
       */
@@ -1254,10 +1265,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         //we have to wait for compnents to initialize before the render.
         // _.defer(function () {
 
-        if (this._rivets) {
-            this._rivets.unbind();
-        }
-        this._rivets = window.rivets.bind(this.el, this);
+        this.initRivets();
 
         // If we are re-rendering, we need to keep focus on first element with autofocus
         var autoFocused = self.find('input[autofocus]:first');
@@ -1752,10 +1760,8 @@ Can.extend = Backbone.Model.extend;
 Suit.Can = new Can();
 
 'use strict';
-
-if (!_.has(Suit, 'Components')) {
-    Suit.Components = {};
-}
+Suit.Components = Suit.Components || {};
+Suit.Components.Binders = Suit.Components.Binders || {};
 
 /** List of registered components for the Suit framework */
 Suit.Components.registeredComponents = [];
@@ -1766,6 +1772,47 @@ Suit.Components.registerComponent = function (className) {
     Suit.Components.registeredComponents.push(className);
     Suit.Components.registeredComponents = _.uniq(Suit.Components.registeredComponents);
 };
+
+Suit.Components.Binders['component-*'] = {
+    block: true,
+    bind: function () {
+        var $el = $(this.el);
+        var componentName = _.str.camelize(_.str.underscored(this.args[0]));
+        var className = _.str.classify(_.str.underscored(componentName));
+        var data = {};
+        _.each($el.data(), function (value, key) {
+            if (_.str.startsWith(key, componentName)) {
+                data[key] = value;
+            }
+        });
+        var attr = {el: this.el};
+        var self = this;
+        _.each(data, function (value, key) {
+            var keypath = value.split(':');
+            var rootModel = self.view.models[keypath.shift()];
+            var model = rootModel;
+            if (rootModel && keypath.length > 1) {
+                model = self.view.adapters[':'].read(rootModel, keypath.join(':'));
+            }
+            attr[_.str.camelize(_.str.underscored(key.replace(componentName, '')))] = model || value;
+        });
+        this.componentView = new Suit.Components[className](attr);
+        $el.removeAttr('suit-component-' + componentName);
+        this.componentView.render();
+        $el.attr('suit-component-' + componentName);
+        this.componentView.setParent(this.view.models);
+    },
+
+    unbind: function () {
+        this.componentView.close();
+    },
+
+    routine: function () {
+    }
+};
+
+_.extend(window.rivets.binders, Suit.Components.Binders);
+
 
 Suit.Component = Suit.View.extend(/** @lends Suit.Component.prototype */{
     /**
@@ -3175,166 +3222,120 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
       * @augments Suit.Component
       * @constructs Suit.Components.Table
       */
-    initialize: function (options) {
-        this.listenTo(this.collection, 'reset sort', this.renderCollection);
-        this.listenTo(this.collection, 'add', this.addOne);
-        this.listenTo(this.collection, 'remove', this.removeOne);
-        this.listenTo(this, 'afterRender', this.renderCollection);
-        Suit.Component.prototype.initialize.apply(this, [options]);
-    },
-    /** View for the Table View Rows */
-    dataTableView: Suit.View,
-    /**
-      * List of default events that will be handled by all views if necessary.
-      * If views want to extend these events, you need to extend it directly
-      * on your view, using the following structure:
-      * events: function () {
-      *     return _.extend({},Suit.View.prototype.events, {
-      *         // 'click .something': myHandler
-      *     });
-      * }
-      */
+
     events: {
-        // Event for sorting the table collection. This only needs to happen
-        // on the table head, when the sort anchors are clicked.
-        'click table thead a.sortable': 'handleCollectionSort'
+        'click th a.sortable': '_sortTable',
     },
-    /** Renders the default sort parameters, based on the route */
-    afterRender: function () {
-        // Selects the sort parameter from the list and activate the current sort
-        // order.
-        if (this.collection.sortBy && this.collection.sortOrder) {
-            this.$el.find('a.sortable').removeClass('active');
 
-            this.$el.find('a[data-sort-by="' + this.collection.sortBy + '"]')
-                .addClass(this.collection.sortOrder)
-                .addClass('active')
-                .attr('data-sort-order', this.collection.sortOrder);
-        }
+    initialize: function (options) {
+        Suit.Component.prototype.initialize.apply(this, [options]);
+        this.$thead = this.find('thead').first();
+        this.$tbody = this.find('tbody').first();
+        this.$tbody.find('tr').first().attr('suit-each-row', 'collection.models');
     },
-    addOne: function (model) {
-        var itemView = new this.dataTableView({
-            model: model
-        });
-        itemView.setParent(this);
-        this.prependView(itemView, 'tbody');
-    },
-    removeOne: function (model) {
-        var childView = _.find(this.children, function (m) {
-            return m.model.cid === model.cid;
-        });
-        childView.close();
-    },
-    /** Renders the collection every sort, reset and afterRender */
-    renderCollection: function () {
-        var self = this;
-        // Create a documentFragment that will allow us to only modify the DOM
-        // once, not everytime a new element is created or appended.
-        var fragment = document.createDocumentFragment();
-        this.empty('tbody');
 
-        // Iterate the collection and append the views to the recently created
-        // documentFragment
-        var maxDisplayRows = self.options.maxDisplayRows;
-        var displayCollection = (maxDisplayRows) ? this.collection.models.slice(0, maxDisplayRows) : this.collection.models;
-        _.each(displayCollection, function (model) {
-            if (!_.isUndefined(self.dataTableView)) {
-                var itemView = new self.dataTableView({model: model});
-                itemView.setParent(self);
-                fragment.appendChild(itemView.render().el);
-            }
-        });
-
-        // Rollup functionality
-        if (self.options.rollUpAs) {
-            var avgModel = self._getRollUpModel();
-            if (!_.isUndefined(avgModel)) {
-                if (!_.isUndefined(self.dataTableView)) {
-                    var itemView = new self.dataTableView({model: avgModel});
-                    itemView.setParent(self);
-                    fragment.appendChild(itemView.render().el);
-                }
-            }
-        }
-        this.$el.find('tbody').append(fragment);
-    },
-    _getRollUpModel: function () {
-        var self = this;
-        var nameColumn = this.options.rollUpNameColum || 'name';
-
-        if (self.collection.length > 0) {
-            var averageModel = new Suit.Model();
-            var displayCollection = self.collection.models;
-
-            _.each(self.options.rollUpColumnKeys, function (key) {
-                var sumAttr = _.reduce(displayCollection, function (memo, model) { return memo + model.get(key); }, 0);
-                if (self.options.rollUpAs === 'average') {
-                    averageModel.set(key, sumAttr / displayCollection.length);
-                } else if (self.options.rollUpAs === 'sum') {
-                    averageModel.set(key, sumAttr);
-                }
-            });
-            averageModel.set(nameColumn, displayCollection.length + ' Total ' + self.formatters.capitalize(self.options.rollUpAs));
-
-            return averageModel;
-        }
-    },
-    /**
-      * Handles collection sort once a sort element (on the thead) is clicked.
-      * @param Event event - Click event
-      */
-    handleCollectionSort: function (event) {
+    _sortTable: function (event) {
         event.preventDefault();
+        var $ele,
+            href,
+            url,
+            $target = $(event.target),
+            sortOrder = $target.data('default-sort'),
+            sortBy = $target.data('sort-by');
 
-        // Clicked element, that is dispatching the sorting funcionality on
-        // the header.
-        var _element = $(event.currentTarget);
+        if ($target.data('current-sort-order') === 'asc') {
+            sortOrder = 'desc';
+        } else if ($target.data('current-sort-order') === 'desc') {
+            sortOrder = 'asc';
+        }
+        $target.data('current-sort-order', sortOrder);
 
-        // Sorting properties
-        var sortBy       = _element.attr('data-sort-by');
-        var sortOrder    = _element.attr('data-sort-order');
-        var newSortOrder = _element.attr('data-default-sort');
+        $target.removeClass('active asc desc');
+        $target.addClass('active ' + sortOrder);
 
-        // Sort the collection, if it exists
-        if (!_.isUndefined(this.collection)) {
-
-            // Decide if we are going to be update
-            if (newSortOrder && this.collection.sortBy !== sortBy) {
-                sortOrder = newSortOrder;
-            } else {
-                newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+        this.collection.sortBy    = sortBy;
+        this.collection.sortOrder = sortOrder;
+        this.collection.sort();
+        href = $target.attr('href');
+        url = href.indexOf('?') === -1 ? href + '?' : href;
+        url += $.param({ sortBy: sortBy, sortOrder: sortOrder });
+        this.find('th a.sortable').each(function (index, element) {
+            if ($target[0] !== element) {
+                $ele = $(element);
+                $ele.data('current-sort-order', false);
+                $ele.removeClass('active asc desc');
             }
+        });
+        Backbone.history.navigate(url);
+    },
 
-            this.collection.sortBy    = sortBy;
-            this.collection.sortOrder = newSortOrder;
-            this.collection.sort();
+    setupInfiniteScroll: function () {
+        this.fetchingNextPage = false;
+        var thHeight,
+            $th,
+            table,
+            infiniteScrollWrapper = $('<div class="infinite-scroll"><div class="infinite-scroll-container"></div></div>');
 
-            // Change the sort order, to the new one. If we are sorting desc
-            // we need to change the property to desc.
-            _element.attr('data-sort-order', newSortOrder);
+        infiniteScrollWrapper.css({position: 'relative'}).find('.infinite-scroll-container').css({overflow: 'auto', height: '400px'});
+        this.$el.wrap(infiniteScrollWrapper);
+
+        this.$thead.find('tr').first().children().each(function (index, th) {
+            $th = $(th);
+            thHeight = $th.height();
+            $th.width($th.width());
+        });
+
+        table = $('<table/>').height(thHeight);
+
+        this.$newThead = this.$thead.clone();
+        this.$newThead.css({position: 'absolute', 'z-index': 10, top: 0, left: 0});
+        this.$newThead.wrap(table);
+        this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
+        this.$el.closest('.infinite-scroll').prepend(this.$newThead);
+
+        this.$thead.css('visibility', 'hidden');
+
+        this.$scrollingView = this.$el.closest('.infinite-scroll-container');
+        this.$scrollingView.css({'margin-top': -thHeight});
+        this.$loader = $('<div class="infinite-scroll-loader"/>').css({position: 'relative', height: 100});
+        this.$scrollingView.append(this.$loader);
+        this.$scrollingView.on('scroll', _.bind(this._scrollViewScrolled, this));
+    },
+
+    removeInfiniteLoader: function () {
+        this.parent.removeLoader('.infinite-scroll-loader');
+        this.find('.infinite-scroll-loader').hide();
+        this.fetchingNextPage = false;
+    },
+
+    _scrollViewScrolled: function (event) {
+        if (this.fetchingNextPage) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
         }
-
-        // Check the current sortBy element, with the current sortOrder
-        this.$el.find('a.sortable').removeClass('asc active desc');
-        _element.addClass('active ' + newSortOrder);
-
-        // Change the route, so that the sorting order is kept on the URL, for
-        // further use.
-        // href represents the base href, so that we can actually have a base route
-        // defined directly on the HTML.
-        var href    = _element.attr('href');
-        if (this.options.sortByRedirect !== false) {
-            var newHref = href.replace(sortOrder, newSortOrder);
-            _element.attr('href', newHref);
-            Backbone.history.navigate(newHref);
+        var offset = (this.$scrollingView[0].scrollHeight - this.$scrollingView.height());
+        if (this.$scrollingView.scrollTop() === offset && this.fetchingNextPage === false) {
+            event.preventDefault();
+            this.fetchingNextPage = true;
+            this.find('.infinite-scroll-loader').show();
+            this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
+            this.trigger('next', this.collection, _.bind(this.removeInfiniteLoader, this));
         }
+    },
 
+    beforeClose: function () {
+        this.$newThead.find('a.sortable').off('click');
+    },
+
+    afterRender: function () {
+        if (_.has(this.options, 'infiniteScroll')) {
+            this.setupInfiniteScroll();
+        }
     }
 });
 
-// Register component.
 Suit.Components.registerComponent('Table');
-
 'use strict';
 
 if (!_.has(Suit, 'Components')) {
@@ -3490,7 +3491,13 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
 
         //query parameter
         if (el.attr('data-param')) {
-            url = url + '?' + el.attr('data-param') + '=%QUERY';//%QUERY is used to replace the value of the query.
+            var queryString = el.attr('data-param') + '=%QUERY', //%QUERY is used to replace the value of the query.
+            urlArray = url.split('?');
+            url = urlArray[0];
+            if (urlArray[1]) {
+                queryString += '&' + urlArray[1];
+            }
+            url = url + '?' + queryString;
         }
 
         //server return limit.
