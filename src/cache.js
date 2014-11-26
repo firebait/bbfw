@@ -29,12 +29,19 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       */
     initialize: function () {},
     /**
+      Initializes and returns the data object
+      **/
+    getData: function () {
+        this.data = this.data || {};
+        return this.data;
+    },
+    /**
       Sets the analytics cache using cache rule
       @params {String} key - Key that defines the key in the cache.
       @params {object} value - Url that defines the key in the cache.
       **/
     set: function (key, value) {
-        var cache = App.cache;
+        var cache = this.getData();
         cache[key] = {value: value, timestamp: moment().utc()};
     },
     /**
@@ -42,7 +49,7 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       @params {String} url - Url that defines the key in the cache.
       **/
     get: function (key) {
-        var cache = App.cache;
+        var cache = this.getData();
         if (this.expired(key)) {
             delete cache[key];
         }
@@ -54,7 +61,7 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       @params {String} key - String that defines the key in the cache.
       **/
     expired: function (key) {
-        var cache = App.cache;
+        var cache = this.getData();
         if (!_.has(cache, key) || this.expirationRule(key)) {
             return true;
         } else {
