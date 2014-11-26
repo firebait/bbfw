@@ -49,11 +49,11 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
     },
     get: function (attr) {
         this.loadFromLocalStorage();
-        var date = Backbone.RelationalModel.prototype.get.call(this, attr);
-        if (_.contains(this.dateAttrs, attr) && !_.isUndefined(date) && !_.isEmpty(date)) {
-            return moment(date);
+        var value = Backbone.RelationalModel.prototype.get.call(this, attr);
+        if (_.contains(this.dateAttrs, attr) && !_.isUndefined(value) && !_.isEmpty(value)) {
+            return moment(value);
         } else {
-            return date;
+            return value;
         }
     },
     convertToMoment: function (value, attributeName) {

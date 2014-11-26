@@ -1,197 +1,113 @@
 'use strict';
 
 describe('Suit Table Component', function () {
-    var TableViewComponent, TableViewRow, table, collection, navSpy;
+
+    var collection, view, spy, el, html, tableComponent, model;
 
     beforeEach(function () {
-        navSpy = sinon.spy(Backbone.history, 'navigate');
+        html = '<div><span></span><table id="itemsCollection" suit-component-table data data-table-collection="collection" data-table-sort="id">';
+        html += '<thead>';
+        html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
+        html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
+        html += '</thead>';
+        html += '<tbody><tr>';
+        html += '<td>{ row:id }</td>';
+        html += '<td>{ row:name }</td>';
+        html += '</tr></tbody></table></div>';
+        el = $(html)[0];
 
-        TableViewRow = Suit.View.extend({
-            template: _.template('<td><%= model.get(\'id\') %></td><td><%= model.get(\'name\') %></td>'),
-            tagName: 'tr'
-        });
-
-        TableViewComponent = Suit.Components.Table.extend({
-            dataTableView: TableViewRow,
-            template: function () {
-                return '<table class="table-blue"><thead><tr><th><a href="#test?sortBy=id&sortOrder=asc" class="sortable" data-sort-by="id">ID:</a></th><th><a href="#test?sortBy=name&sortOrder=asc" class="sortable active asc" data-sort-order="asc" data-sort-by="name">Name</a></th></th></thead><tbody></tbody></table>';
-            }
-        });
 
         collection = new Suit.Collection([
             { id: 1, name: 'Foo' },
             { id: 2, name: 'Bar' }
         ]);
 
-        table = new TableViewComponent({collection : collection});
+        var ModelWithCollection = Suit.Model.extend({
+            relations: [
+                {
+                    type: Backbone.HasMany,
+                    key: 'items',
+                    collectionType: 'Suit.Collection',
+                    relatedModel: 'Suit.Model',
+                    includeInJSON: false
+                }
+            ]
+        });
 
-        table.render();
+        model = new ModelWithCollection({});
+        model.get('items').reset([
+            { id: 3, name: 'Child Foo' },
+            { id: 4, name: 'Child Bar' }
+        ]);
 
-        collection.trigger('sync');
+        view = new Suit.View({el: el, collection: collection});
+        view.render();
+        tableComponent = view.find('#itemsCollection').first();
+
     });
 
     afterEach(function () {
-        Backbone.history.navigate.restore();
+        view.close();
+    });
+
+    describe('rendering as component', function () {
+        it('should initialize the table component', function () {
+            spy = sinon.spy(Suit.Components.Table.prototype, 'initialize');
+            view = new Suit.View({el: $(html)[0], collection: collection});
+            view.render();
+            expect(spy.calledOnce).toEqual(true);
+            spy.restore();
+        });
     });
 
     describe('rendering the collection', function () {
         it('should render the collection directly, with all the correct elements', function () {
             // Rows are correct
-            expect(table.$el.find('tbody').children().length).toBe(2);
-            expect(table.$el.find('tbody').children().first().text()).toBe('1Foo');
-            expect(table.$el.find('tbody').children().last().text()).toBe('2Bar');
+            expect(tableComponent.find('tbody').children().length).toBe(2);
+            expect(tableComponent.find('tbody').children().first().text()).toBe('1Foo');
+            expect(tableComponent.find('tbody').children().last().text()).toBe('2Bar');
+
+
         });
 
-        it('should render with the defaults sort orders', function () {
-            var idFilterEl = table.$el.find('a[data-sort-by="id"]');
+        it('should render the model:collection directly, with all the correct elements', function () {
+            view = new Suit.View({el: $(html.replace('data-table-collection="collection"', 'data-table-collection="model:items"'))[0], model: model});
+            view.render();
+            // Rows are correct
+            expect(tableComponent.find('tbody').children().length).toBe(2);
+            expect(tableComponent.find('tbody').children().first().text()).toBe('1Foo');
+            expect(tableComponent.find('tbody').children().last().text()).toBe('2Bar');
+
+
+        });
+
+        it('should render with the default sort order', function () {
+            var idFilterEl = tableComponent.find('th a.sortable[data-sort-by="id"]').first();
             expect(idFilterEl.hasClass('active')).toBe(true);
             expect(idFilterEl.hasClass('asc')).toBe(true);
-            expect(table.$el.find('a.active').length).toBe(1);
+            expect(tableComponent.find('a.active').length).toBe(1);
         });
     });
 
-    describe('should test the rollup, maxrow, sortbyRedirect, rollupColums functionality of table component', function () {
-        beforeEach(function () {
-            //navSpy = sinon.spy(Backbone.history, 'navigate');
+    describe('sorting column', function () {
 
-            TableViewRow = Suit.View.extend({
-                template: _.template('<td><%= model.get(\'id\') %></td><td><%= model.get(\'name\') %></td><td><%= model.get(\'impressions\') %></td>'),
-                tagName: 'tr'
-            });
+        it('should sort by correct column and default order on first click', function () {
+            tableComponent.find('a.sortable[data-sort-by="name"]').first().trigger('click');
+            expect(collection.sortBy).toEqual('name');
+            expect(collection.sortOrder).toEqual('desc');
 
-            TableViewComponent = Suit.Components.Table.extend({
-                dataTableView: TableViewRow,
-                template: function () {
-                    return '<table class="table-blue"><thead><tr><th><a href="#" class="">ID:</a></th><th><a href="#" class="">Name</a></th><th><a href="javascript:void(0)" class="sortable asc active" data-sort-by="impressions">Impressions</a></th></tr></thead><tbody></tbody></table>';
-                }
-            });
-
-            collection = new Suit.Collection([
-                { id: 1, name: 'Foo', impressions: 900},
-                { id: 2, name: 'Bar', impressions: 1000},
-                { id: 3, name: 'Lala', impressions: 5000},
-                { id: 4, name: 'Kaka', impressions: 7000},
-            ]);
-            collection.sortBy = 'impressions';
         });
 
-        afterEach(function () {
-            //Backbone.history.navigate.restore();
-        });
-
-        it('should test the maxDisplayRow functionlity', function () {
-            table = new TableViewComponent({collection : collection, maxDisplayRows: 3});
-            table.render();
-            collection.trigger('sync');
-            expect(table.$el.find('tbody').children().last().text()).toBe('3Lala5000');
-        });
-
-        it('should test the rollup functionality for average', function () {
-            table = new TableViewComponent({collection : collection, maxDisplayRows: 3, rollUpAs: 'average', rollUpColumnKeys: ['impressions']});
-            table.render();
-            collection.trigger('sync');
-            expect(table.$el.find('tbody').children().last().text()).toBe('4 Total Average3475');
-        });
-
-        it('should test the rollup functionality for sum', function () {
-            table = new TableViewComponent({collection : collection, maxDisplayRows: 3, rollUpAs: 'sum', rollUpColumnKeys: ['impressions']});
-            table.render();
-            collection.trigger('sync');
-            expect(table.$el.find('tbody').children().last().text()).toBe('4 Total Sum13900');
-        });
-
-        it('should test the sortByRedirect functionality of table component', function () {
-            table = new TableViewComponent({sortByRedirect: false, collection : collection, maxDisplayRows: 3, rollUpAs: 'sum', rollUpColumnKeys: ['impressions']});
-            table.render();
-            collection.trigger('sync');
-            var impsFilterEl = table.$el.find('a[data-sort-by="impressions"]')
-                .trigger('click').trigger('click');
-            expect(impsFilterEl.attr('href')).toBe('javascript:void(0)');
-        });
-    });
-
-    describe('sort', function () {
-        it('should correctly change the sorting by', function () {
-            var nameFilterEl = table.$el.find('a[data-sort-by="name"]')
-                .trigger('click').trigger('click');
-
-            // The list should be sorted now
-            expect(table.$el.find('tbody').children().first().text()).toBe('2Bar');
-            expect(table.$el.find('tbody').children().last().text()).toBe('1Foo');
-
-            // The order is now by name
-            expect(nameFilterEl.hasClass('active asc')).toBe(true);
-            expect(nameFilterEl.attr('data-sort-order')).toBe('asc');
-            expect(nameFilterEl.attr('href')).toBe('#test?sortBy=name&sortOrder=asc');
-            expect(table.$el.find('a.active').length).toBe(1);
-
-            expect(navSpy).toHaveBeenCalled();
-            expect(navSpy.calledWith('#test?sortBy=name&sortOrder=asc')).toBeTruthy();
-        });
-
-        it('should correctly change the sorting order', function () {
-            var nameFilterEl = table.$el.find('a[data-sort-by="name"]')
-                .trigger('click');
-
-            // The list should be sorted now
-            expect(table.$el.find('tbody').children().first().text()).toBe('1Foo');
-            expect(table.$el.find('tbody').children().last().text()).toBe('2Bar');
-
-            // The order is now by name
-            expect(nameFilterEl.hasClass('active desc')).toBe(true);
-            expect(nameFilterEl.attr('data-sort-order')).toBe('desc');
-            expect(nameFilterEl.attr('href')).toBe('#test?sortBy=name&sortOrder=desc');
-            expect(table.$el.find('a.active').length).toBe(1);
-
-            expect(navSpy).toHaveBeenCalled();
-            expect(navSpy.calledWith('#test?sortBy=name&sortOrder=desc')).toBeTruthy();
-        });
-    });
-
-    describe('should test the data-default-sort', function () {
-        beforeEach(function () {
-            //navSpy = sinon.spy(Backbone.history, 'navigate');
-
-            TableViewRow = Suit.View.extend({
-                template: _.template('<td><%= model.get(\'id\') %></td><td><%= model.get(\'name\') %></td><td><%= model.get(\'impressions\') %></td><td><%= model.get(\'vcr\') %></td>'),
-                tagName: 'tr'
-            });
-
-            TableViewComponent = Suit.Components.Table.extend({
-                dataTableView: TableViewRow,
-                template: function () {
-                    return '<table class="table-blue"><thead><tr><th><a href="#" class="">ID:</a></th><th><a href="#" class="">Name</a></th><th><a href="javascript:void(0)" class="sortable asc active" data-sort-by="impressions">Impressions</a></th></tr><th><a href="javascript:void(0)" data-sort-order="desc" class="sortable desc" data-sort-by="vcr" data-default-sort="desc">VCR</a></th></thead><tbody></tbody></table>';
-                }
-            });
-
-            collection = new Suit.Collection([
-                { id: 1, name: 'Foo', impressions: 900, vcr: 100},
-                { id: 2, name: 'Bar', impressions: 1000, vcr: 200},
-                { id: 3, name: 'Lala', impressions: 5000, vcr: 300},
-                { id: 4, name: 'Kaka', impressions: 7000, vcr: 400},
-            ]);
-            collection.sortBy = 'impressions';
-        });
-
-        afterEach(function () {
-            //Backbone.history.navigate.restore();
-        });
-
-        it('should test the data-default-sort of the vcr column to sort in desc when clicked', function () {
-            table = new TableViewComponent({collection : collection});
-            table.render();
-            collection.trigger('sync');
-
-            var vcrFilterEl = table.$el.find('a[data-sort-by="vcr"]').trigger('click');
-
-            // The list should be sorted now
-            expect(table.$el.find('tbody').children().first().text()).toBe('4Kaka7000400');
-            expect(table.$el.find('tbody').children().last().text()).toBe('1Foo900100');
-
-            // The order is now by name
-            expect(vcrFilterEl.hasClass('active desc')).toBe(true);
-            expect(vcrFilterEl.attr('data-default-sort')).toBe('desc');
-            expect(table.$el.find('a.active').length).toBe(1);
+        it('should toggle between asc and desc', function () {
+            tableComponent.find('a.sortable[data-sort-by="name"]').first().trigger('click');
+            expect(collection.sortBy).toEqual('name');
+            expect(collection.sortOrder).toEqual('desc');
+            tableComponent.find('a.sortable[data-sort-by="name"]').first().trigger('click');
+            expect(collection.sortBy).toEqual('name');
+            expect(collection.sortOrder).toEqual('asc');
+            tableComponent.find('a.sortable[data-sort-by="name"]').first().trigger('click');
+            expect(collection.sortBy).toEqual('name');
+            expect(collection.sortOrder).toEqual('desc');
 
         });
 

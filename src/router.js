@@ -95,8 +95,8 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
             controller = App.Controllers[routerName],
             scope = router;
 
-        if (!callback) { callback = this[name]; }
-        if (!callback && controller) {
+        callback = callback || this[name];
+        if (controller) {
             callback = controller[name];
             scope = controller;
         }

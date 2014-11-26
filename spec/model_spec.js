@@ -18,6 +18,7 @@ describe('Suit Model', function () {
 
         afterEach(function () {
             server.restore();
+            localStorage.clear();
         });
 
         it('should save to localStorage after model is saved', function () {
@@ -27,6 +28,20 @@ describe('Suit Model', function () {
             server.respond();
             expect(model.get('test')).toEqual('test');
             expect(localStorage.getItem('localStorage111')).toBe('{"id":111,"test":"test"}');
+        });
+        it('should load from localStorage', function () {
+            model.set('test', 'test');
+            server.respondWith('POST', model.url, [200, { 'Content-Type': 'application/json' }, '{"test": "test"}']);
+            model.save();
+            server.respond();
+            expect(model.get('test')).toEqual('test');
+            expect(localStorage.getItem('localStorage111')).toBe('{"id":111,"test":"test"}');
+            Backbone.Relational.store.reset();
+            var newModel = Suit.Model.findOrCreate({id: 111});
+            newModel.className = 'localStorage';
+            newModel.localStorage = true;
+            newModel.remoteStorage =  true;
+            expect(newModel.get('test')).toEqual('test');
         });
 
     });
@@ -39,10 +54,33 @@ describe('Suit Model', function () {
             model.remoteStorage =  false;
         });
 
+        afterEach(function () {
+            localStorage.clear();
+        });
+
         it('should save to localStorage after model is saved', function () {
             model.save({'test': 'test'});
             expect(model.get('test')).toEqual('test');
             expect(localStorage.getItem('localStorageNoUrl112')).toBe('{"id":112,"test":"test"}');
+        });
+
+        it('should load from localStorage', function () {
+            model.save({'test': 'test'});
+            expect(model.get('test')).toEqual('test');
+            Backbone.Relational.store.reset();
+            var newModel = Suit.Model.findOrCreate({id: 112});
+            newModel.className = 'localStorageNoUrl';
+            newModel.localStorage = true;
+            newModel.remoteStorage =  false;
+            expect(newModel.get('test')).toEqual('test');
+        });
+
+        it('should remove from localStorage after model is deleted', function () {
+            model.save({'test': 'test'});
+            expect(model.get('test')).toEqual('test');
+            expect(localStorage.getItem('localStorageNoUrl112')).toBe('{"id":112,"test":"test"}');
+            model.destroy();
+            expect(localStorage.getItem('localStorageNoUrl112')).toBe(null);
         });
 
     });
@@ -69,6 +107,14 @@ describe('Suit Model', function () {
             model.dateFormat = 'YYYY-MM-DD';
             model.set({startDate: dateString});
             expect(model.attributes.startDate).toEqual('2012-01-01');
+        });
+
+        it('should set the backbone moment to an empty string if date is undefined or null', function () {
+            expect(model.attributes.startDate).toEqual('2012-01-01 12:00:00');
+            model.set({startDate: null});
+            expect(model.attributes.startDate).toEqual('');
+            model.set({startDate: undefined});
+            expect(model.attributes.startDate).toEqual('');
         });
 
     });

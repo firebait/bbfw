@@ -20,17 +20,17 @@ Backbone.sync = function (method, model, options) {
     }
 
     var eventName = method;
+    switch (method) {
+        case 'read':
+            eventName = method;
+            break;
+        case 'patch':
+            eventName = 'patched';
+            break;
+        default:
+            eventName = method + 'd';
+    }
     options.success = function (resp, status, xhr) {
-        switch (method) {
-            case 'read':
-                eventName = method;
-                break;
-            case 'patch':
-                eventName = 'patched';
-                break;
-            default:
-                eventName = method + 'd';
-        }
 
         if (success) {
             success(resp, status, xhr);
