@@ -83,7 +83,7 @@ _.extend(Controller.prototype, Events, /** @lends Controller.prototype */{
 
         if (previousRoute) {
             Backbone.history.navigate(previousRoute, {trigger: trigger});
-        } else if (!previousRoute && fallback) {
+        } else if (fallback) {
             Backbone.history.navigate(fallback, {trigger: trigger});
         } else {
             Backbone.history.navigate('', {trigger: trigger});

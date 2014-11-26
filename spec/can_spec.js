@@ -1,7 +1,7 @@
 'use strict';
 
 describe('Suit framework Can', function () {
-    
+
     describe('go', function () {
 
         it('should allow return true if no rules are defined', function () {

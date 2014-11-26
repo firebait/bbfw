@@ -39,7 +39,7 @@
         "window": true,
         "document": true,
 	    "btoa": true,
-        "atob": true, 
+        "atob": true,
 	    "loginUser": true,
         "ajaxErrorListener": true,
         "Pikaday": true,
@@ -52,6 +52,7 @@
         "waits": true,
         "done": true,
         "runs": true,
+        "waitsFor": true,
         "localStorage": true,
         "Events": true
     }

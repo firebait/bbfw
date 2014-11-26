@@ -22,4 +22,10 @@ describe('Suit.Cache', function () {
         expect(cache.get('key')).toEqual('value');
     });
 
+    it('should not get expired cache', function () {
+        cache.set('key', 'value');
+        cache.expirationRule = function () { return true; };
+        expect(_.isUndefined(cache.get('key'))).toEqual(true);
+    });
+
 });

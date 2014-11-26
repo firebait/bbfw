@@ -1047,6 +1047,8 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         this.appendView(view, selector);
         return this;
     },
+
+    // This should be moved to Guide
     noData: function (selector) {
         var el = this.find(selector);
 
@@ -1070,6 +1072,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             el.append(divElem);
         }
     },
+    // This should be moved to Guide
     removeNoData: function (selector) {
         var el = this.find(selector);
         var parent = el.parent();
@@ -1435,7 +1438,7 @@ _.extend(Controller.prototype, Events, /** @lends Controller.prototype */{
 
         if (previousRoute) {
             Backbone.history.navigate(previousRoute, {trigger: trigger});
-        } else if (!previousRoute && fallback) {
+        } else if (fallback) {
             Backbone.history.navigate(fallback, {trigger: trigger});
         } else {
             Backbone.history.navigate('', {trigger: trigger});

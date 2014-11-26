@@ -313,6 +313,30 @@ describe('Suit Model', function () {
 
         });
 
+        describe('numeric validation', function () {
+
+            it('should validate if value is numeric', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['numeric']
+                        }
+                    }
+                });
+                model = new Model({name: 't'});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('Name value must be numeric.');
+
+                model.set('name', 0);
+                expect(model.isValid()).toBe(true);
+
+                model.set('name', 123);
+                expect(model.isValid()).toBe(true);
+            });
+
+        });
+
         describe('max validation', function () {
             it('should validate the max length validation', function () {
                 var Model;

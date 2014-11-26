@@ -2,7 +2,7 @@
 
 describe('Suit View', function () {
 
-    var view, parent, model, server;
+    var view, parent, model, server, spy;
 
     beforeEach(function () {
         model = new Suit.Model({});
