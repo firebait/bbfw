@@ -81,7 +81,7 @@ Suit.Components.DateRange = Suit.Component.extend(/** @lends Suit.Components.Dat
                 this.endPicker.picker.setMoment(moment(), true);
                 break;
             case 'last_7_days':
-                this.startPicker.picker.setMoment(moment().subtract('days', 7), true);
+                this.startPicker.picker.setMoment(moment().subtract(7, 'days'), true);
                 this.endPicker.picker.setMoment(moment(), true);
                 break;
             case 'this_month':

@@ -65,7 +65,7 @@ describe('Date range component', function () {
         it('should be able to select last 7 days', function () {
             view.$el.find('select').val('last_7_days').trigger('change');
 
-            expect(startInput.val()).toBe(moment().subtract('days', 7).format('MM/DD/YYYY'));
+            expect(startInput.val()).toBe(moment().subtract(7, 'days').format('MM/DD/YYYY'));
             expect(endInput.val()).toBe(moment().format('MM/DD/YYYY'));
         });
 

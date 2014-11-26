@@ -119,8 +119,9 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     *   Cleans error tag when form is submitted or model is saved
     */
     cleanErrors: function () {
-        while (this.error.length) {
-            var el = this.error.pop();
+        this.$el.find('.error').removeClass('error');
+        while (this.errors.length) {
+            var el = this.errors.pop();
             el.remove();
         }
     },

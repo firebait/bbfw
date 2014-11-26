@@ -328,17 +328,17 @@ Backbone.sync = function (method, model, options) {
     }
 
     var eventName = method;
+    switch (method) {
+        case 'read':
+            eventName = method;
+            break;
+        case 'patch':
+            eventName = 'patched';
+            break;
+        default:
+            eventName = method + 'd';
+    }
     options.success = function (resp, status, xhr) {
-        switch (method) {
-            case 'read':
-                eventName = method;
-                break;
-            case 'patch':
-                eventName = 'patched';
-                break;
-            default:
-                eventName = method + 'd';
-        }
 
         if (success) {
             success(resp, status, xhr);
@@ -639,11 +639,11 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
     },
     get: function (attr) {
         this.loadFromLocalStorage();
-        var date = Backbone.RelationalModel.prototype.get.call(this, attr);
-        if (_.contains(this.dateAttrs, attr) && !_.isUndefined(date) && !_.isEmpty(date)) {
-            return moment(date);
+        var value = Backbone.RelationalModel.prototype.get.call(this, attr);
+        if (_.contains(this.dateAttrs, attr) && !_.isUndefined(value) && !_.isEmpty(value)) {
+            return moment(value);
         } else {
-            return date;
+            return value;
         }
     },
     convertToMoment: function (value, attributeName) {
@@ -843,21 +843,6 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
                     key = currentTarget.find('select').attr('data-error-key');
                 }
                 $('body').find('.tooltip[data-error-key="' + key + '"]').hide();
-            },
-            // We are going to listen to form events and trigger them with our custom logic.
-            'submit' : function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                var form = $(event.target);
-                var action = form.attr('action');
-                var method = (form.attr('method') || 'GET').toUpperCase();
-                var attrs = form.serialize();
-                var url = action;
-                if (method === 'GET') {
-                    url += '?' + attrs;
-                }
-                App.request.params = self.serializeObject();
-                Backbone.history.navigate(url, {trigger: true});
             }
         }, this.events);
 
@@ -887,6 +872,9 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             this.listenTo(App.currentUser, 'change:permission', this._removeUnauthorizedElements);
         }
 
+        // Create an errors container to clear the proper errors for the view.
+        this.errors = [];
+
         // Attach this view to the el data('view') property for later use.
         this.$el.data('view', this);
     },
@@ -897,7 +885,10 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     */
     cleanErrors: function () {
         this.$el.find('.error').removeClass('error');
-        $('body').find('.tooltip[data-error-key]').remove();
+        while (this.errors.length) {
+            var el = this.errors.pop();
+            el.remove();
+        }
     },
     /**
       * Handles server response errors for inputs on the view.
@@ -952,6 +943,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
+            this.errors.append(tooltip);
             $('body').append(tooltip);
         }
     },
@@ -1047,6 +1039,8 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         this.appendView(view, selector);
         return this;
     },
+
+    // This should be moved to Guide
     noData: function (selector) {
         var el = this.find(selector);
 
@@ -1070,6 +1064,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             el.append(divElem);
         }
     },
+    // This should be moved to Guide
     removeNoData: function (selector) {
         var el = this.find(selector);
         var parent = el.parent();
@@ -1195,7 +1190,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     },
     /** Method to be implemented for before close handling. */
     beforeClose: function () {
-        // Override and implement your before render logic.     
+        // Override and implement your before render logic.
     },
     /**
       * It closes the view by removing it from DOM, clearing all event and closing all child views.
@@ -1435,7 +1430,7 @@ _.extend(Controller.prototype, Events, /** @lends Controller.prototype */{
 
         if (previousRoute) {
             Backbone.history.navigate(previousRoute, {trigger: trigger});
-        } else if (!previousRoute && fallback) {
+        } else if (fallback) {
             Backbone.history.navigate(fallback, {trigger: trigger});
         } else {
             Backbone.history.navigate('', {trigger: trigger});
@@ -1477,12 +1472,19 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       */
     initialize: function () {},
     /**
+      Initializes and returns the data object
+      **/
+    getData: function () {
+        this.data = this.data || {};
+        return this.data;
+    },
+    /**
       Sets the analytics cache using cache rule
       @params {String} key - Key that defines the key in the cache.
       @params {object} value - Url that defines the key in the cache.
       **/
     set: function (key, value) {
-        var cache = App.cache;
+        var cache = this.getData();
         cache[key] = {value: value, timestamp: moment().utc()};
     },
     /**
@@ -1490,7 +1492,7 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       @params {String} url - Url that defines the key in the cache.
       **/
     get: function (key) {
-        var cache = App.cache;
+        var cache = this.getData();
         if (this.expired(key)) {
             delete cache[key];
         }
@@ -1502,7 +1504,7 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       @params {String} key - String that defines the key in the cache.
       **/
     expired: function (key) {
-        var cache = App.cache;
+        var cache = this.getData();
         if (!_.has(cache, key) || this.expirationRule(key)) {
             return true;
         } else {
@@ -1619,8 +1621,8 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
             controller = App.Controllers[routerName],
             scope = router;
 
-        if (!callback) { callback = this[name]; }
-        if (!callback && controller) {
+        callback = callback || this[name];
+        if (controller) {
             callback = controller[name];
             scope = controller;
         }
@@ -1791,7 +1793,7 @@ Suit.Components.Binders['component-*'] = {
             var keypath = value.split(':');
             var rootModel = self.view.models[keypath.shift()];
             var model = rootModel;
-            if (rootModel && keypath.length > 1) {
+            if (rootModel && keypath.length > 0) {
                 model = self.view.adapters[':'].read(rootModel, keypath.join(':'));
             }
             attr[_.str.camelize(_.str.underscored(key.replace(componentName, '')))] = model || value;
@@ -2181,7 +2183,7 @@ Suit.Components.DateRange = Suit.Component.extend(/** @lends Suit.Components.Dat
                 this.endPicker.picker.setMoment(moment(), true);
                 break;
             case 'last_7_days':
-                this.startPicker.picker.setMoment(moment().subtract('days', 7), true);
+                this.startPicker.picker.setMoment(moment().subtract(7, 'days'), true);
                 this.endPicker.picker.setMoment(moment(), true);
                 break;
             case 'this_month':
@@ -3199,9 +3201,7 @@ Suit.Components.registerComponent('SuitTab');
 
 'use strict';
 
-if (!_.has(Suit, 'Components')) {
-    Suit.Components = {};
-}
+Suit.Components = Suit.Components || {};
 
 Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.prototype */{
     /**
@@ -3231,7 +3231,8 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         Suit.Component.prototype.initialize.apply(this, [options]);
         this.$thead = this.find('thead').first();
         this.$tbody = this.find('tbody').first();
-        this.$tbody.find('tr').first().attr('suit-each-row', 'collection.models');
+        var keypath = (this.collection instanceof Suit.Collection) ? 'collection.models' : 'collection';
+        this.$tbody.find('tr').first().attr('suit-each-row', keypath);
     },
 
     _sortTable: function (event) {
@@ -3269,69 +3270,77 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         Backbone.history.navigate(url);
     },
 
-    setupInfiniteScroll: function () {
-        this.fetchingNextPage = false;
-        var thHeight,
-            $th,
-            table,
-            infiniteScrollWrapper = $('<div class="infinite-scroll"><div class="infinite-scroll-container"></div></div>');
+    // setupInfiniteScroll: function () {
+    //     this.fetchingNextPage = false;
+    //     var thHeight,
+    //         $th,
+    //         table,
+    //         infiniteScrollWrapper = $('<div class="infinite-scroll"><div class="infinite-scroll-container"></div></div>');
 
-        infiniteScrollWrapper.css({position: 'relative'}).find('.infinite-scroll-container').css({overflow: 'auto', height: '400px'});
-        this.$el.wrap(infiniteScrollWrapper);
+    //     infiniteScrollWrapper.css({position: 'relative'}).find('.infinite-scroll-container').css({overflow: 'auto', height: '400px'});
+    //     this.$el.wrap(infiniteScrollWrapper);
 
-        this.$thead.find('tr').first().children().each(function (index, th) {
-            $th = $(th);
-            thHeight = $th.height();
-            $th.width($th.width());
-        });
+    //     this.$thead.find('tr').first().children().each(function (index, th) {
+    //         $th = $(th);
+    //         thHeight = $th.height();
+    //         $th.width($th.width());
+    //     });
 
-        table = $('<table/>').height(thHeight);
+    //     table = $('<table/>').height(thHeight);
 
-        this.$newThead = this.$thead.clone();
-        this.$newThead.css({position: 'absolute', 'z-index': 10, top: 0, left: 0});
-        this.$newThead.wrap(table);
-        this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
-        this.$el.closest('.infinite-scroll').prepend(this.$newThead);
+    //     this.$newThead = this.$thead.clone();
+    //     this.$newThead.css({position: 'absolute', 'z-index': 10, top: 0, left: 0});
+    //     this.$newThead.wrap(table);
+    //     this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
+    //     this.$el.closest('.infinite-scroll').prepend(this.$newThead);
 
-        this.$thead.css('visibility', 'hidden');
+    //     this.$thead.css('visibility', 'hidden');
 
-        this.$scrollingView = this.$el.closest('.infinite-scroll-container');
-        this.$scrollingView.css({'margin-top': -thHeight});
-        this.$loader = $('<div class="infinite-scroll-loader"/>').css({position: 'relative', height: 100});
-        this.$scrollingView.append(this.$loader);
-        this.$scrollingView.on('scroll', _.bind(this._scrollViewScrolled, this));
-    },
+    //     this.$scrollingView = this.$el.closest('.infinite-scroll-container');
+    //     this.$scrollingView.css({'margin-top': -thHeight});
+    //     this.$loader = $('<div class="infinite-scroll-loader"/>').css({position: 'relative', height: 100});
+    //     this.$scrollingView.append(this.$loader);
+    //     this.$scrollingView.on('scroll', _.bind(this._scrollViewScrolled, this));
+    // },
 
-    removeInfiniteLoader: function () {
-        this.parent.removeLoader('.infinite-scroll-loader');
-        this.find('.infinite-scroll-loader').hide();
-        this.fetchingNextPage = false;
-    },
+    // teardownInfiniteScroll: function () {
+    //     this.$newThead.find('a.sortable').off('click');
+    //     this.$scrollingView.off('scroll');
+    // },
 
-    _scrollViewScrolled: function (event) {
-        if (this.fetchingNextPage) {
-            event.preventDefault();
-            event.stopPropagation();
-            return;
-        }
-        var offset = (this.$scrollingView[0].scrollHeight - this.$scrollingView.height());
-        if (this.$scrollingView.scrollTop() === offset && this.fetchingNextPage === false) {
-            event.preventDefault();
-            this.fetchingNextPage = true;
-            this.find('.infinite-scroll-loader').show();
-            this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
-            this.trigger('next', this.collection, _.bind(this.removeInfiniteLoader, this));
-        }
-    },
+    // removeInfiniteLoader: function () {
+    //     this.parent.removeLoader('.infinite-scroll-loader');
+    //     this.find('.infinite-scroll-loader').hide();
+    //     this.fetchingNextPage = false;
+    // },
+
+    // _scrollViewScrolled: function (event) {
+    //     if (this.fetchingNextPage) {
+    //         event.preventDefault();
+    //         event.stopPropagation();
+    //         return;
+    //     }
+    //     var offset = (this.$scrollingView[0].scrollHeight - this.$scrollingView.height());
+    //     if (this.$scrollingView.scrollTop() === offset && this.fetchingNextPage === false) {
+    //         event.preventDefault();
+    //         this.fetchingNextPage = true;
+    //         this.find('.infinite-scroll-loader').show();
+    //         this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
+    //         this.trigger('next', this.collection, _.bind(this.removeInfiniteLoader, this));
+    //     }
+    // },
 
     beforeClose: function () {
-        this.$newThead.find('a.sortable').off('click');
+        // if (_.has(this.options, 'infiniteScroll')) {
+        //     this.teardownInfiniteScroll();
+        // }
     },
 
     afterRender: function () {
-        if (_.has(this.options, 'infiniteScroll')) {
-            this.setupInfiniteScroll();
-        }
+        // if (_.has(this.options, 'infiniteScroll')) {
+        //     this.setupInfiniteScroll();
+        // }
+        this.find('th a.sortable[data-sort-by="' + this.options.sort + '"]').first().trigger('click');
     }
 });
 
