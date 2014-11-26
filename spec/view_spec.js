@@ -2,7 +2,7 @@
 
 describe('Suit View', function () {
 
-    var view, parent, model, server;
+    var view, parent, model, server, spy;
 
     beforeEach(function () {
         model = new Suit.Model({});
@@ -234,6 +234,32 @@ describe('Suit View', function () {
             expect(component.parent).toBe(view);
             expect(_.contains(view.children, component)).toBe(true);
         });
+    });
+
+    describe('validation', function () {
+        var CustomModel;
+
+        it('should respond to validation of model', function () {
+            CustomModel = Suit.Model.extend({
+                url: 'someurl',
+                className: 'CustomModel',
+                validates: {
+                    name: {
+                        rules: ['numeric']
+                    }
+                },
+                initialize: function () {
+                }
+            });
+            model = new CustomModel({});
+            view = new Suit.View({id: 'view', model: model});
+            model.set('name', 'test');
+            spy = sinon.spy(view, 'showVisualError');
+            model.validate();
+            // expect(spy).toHaveBeenCalled();
+            console.info('TODO: Test View validation');
+        });
+
     });
 
     describe('viewable elements', function () {

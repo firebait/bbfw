@@ -20,6 +20,21 @@ describe('Suit Collection', function () {
         collection.sortOrder = 'asc';
     });
 
+    it('should not sort if there is no sortBy or sortOrder', function () {
+        collection.sortBy = '';
+        collection.sort();
+        expect(collection.models[0].get('name')).toBe(model1.get('name'));
+        expect(collection.models[1].get('name')).toBe(model2.get('name'));
+        expect(collection.models[2].get('name')).toBe(model3.get('name'));
+
+        collection.sortBy = 'name';
+        collection.sortOrder = '';
+        collection.sort();
+        expect(collection.models[0].get('name')).toBe(model1.get('name'));
+        expect(collection.models[1].get('name')).toBe(model2.get('name'));
+        expect(collection.models[2].get('name')).toBe(model3.get('name'));
+    });
+
     it('should sort by name ascending', function () {
         collection.sort();
         expect(collection.models[0].get('name')).toBe(model1.get('name'));

@@ -14,6 +14,12 @@ describe('Suit RestfulUrls', function () {
         expect(mockModel._restfulBase()).toEqual('#some_function_url');
     });
 
+    it('should generate the _restfulBase with the urlRoot undefined', function () {
+        delete mockModel.urlRoot;
+        mockModel.url = 'api/some_function_url';
+        expect(mockModel._restfulBase()).toEqual('#api');
+    });
+
     it('should generate the show, new, edit and delete url', function () {
         mockModel.urlRoot = 'restful_base';
         expect(mockModel.showUrl()).toEqual('#restful_base/5');

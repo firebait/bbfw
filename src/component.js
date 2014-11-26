@@ -30,7 +30,7 @@ Suit.Components.Binders['component-*'] = {
             var keypath = value.split(':');
             var rootModel = self.view.models[keypath.shift()];
             var model = rootModel;
-            if (rootModel && keypath.length > 1) {
+            if (rootModel && keypath.length > 0) {
                 model = self.view.adapters[':'].read(rootModel, keypath.join(':'));
             }
             attr[_.str.camelize(_.str.underscored(key.replace(componentName, '')))] = model || value;

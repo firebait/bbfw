@@ -48,6 +48,7 @@ describe('Suit Controller', function () {
         });
 
         it('should go to fallback, if no last route', function () {
+            App.routesHistory.previousRoute = null;
             controller.goBack('#style_guide');
             expect(Backbone.history.fragment).toBe('style_guide');
         });

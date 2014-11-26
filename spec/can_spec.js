@@ -1,7 +1,7 @@
 'use strict';
 
 describe('Suit framework Can', function () {
-    
+
     describe('go', function () {
 
         it('should allow return true if no rules are defined', function () {
@@ -22,5 +22,17 @@ describe('Suit framework Can', function () {
             expect(Suit.Can.go('controller', 'action', App.currentUser)).toBe(true);
         });
 
+    });
+
+    describe('authenticate', function () {
+        // var spy;
+        it('should logout of Session if token doesnt exist', function () {
+            // localStorage.removeItem('token');
+            // spy = sinon.spy(App.Controllers.Sessions, 'logout');
+            // Suit.Can.authenticate();
+            // expect(spy).toHaveBeenCalled();
+            // change from logout of session to triggering an event?
+            console.info('TODO: Should this be moved to guide?');
+        });
     });
 });
