@@ -236,6 +236,32 @@ describe('Suit View', function () {
         });
     });
 
+    describe('validation', function () {
+        var CustomModel;
+
+        it('should respond to validation of model', function () {
+            CustomModel = Suit.Model.extend({
+                url: 'someurl',
+                className: 'CustomModel',
+                validates: {
+                    name: {
+                        rules: ['numeric']
+                    }
+                },
+                initialize: function () {
+                }
+            });
+            model = new CustomModel({});
+            view = new Suit.View({id: 'view', model: model});
+            model.set('name', 'test');
+            spy = sinon.spy(view, 'showVisualError');
+            model.validate();
+            // expect(spy).toHaveBeenCalled();
+            console.info('TODO: Test View validation');
+        });
+
+    });
+
     describe('viewable elements', function () {
 
         it('should remove elements depending on the App.currentUser permission', function () {
@@ -252,7 +278,7 @@ describe('Suit View', function () {
     });
 
     describe('custom events', function () {
-        
+
         it('should listen to GET submit events on the view', function () {
             view.$el.append($('<form action="#some_url"><input name="name" value="set"></form>'));
             var historySpy = sinon.spy(Backbone.history, 'navigate');

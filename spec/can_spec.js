@@ -23,4 +23,16 @@ describe('Suit framework Can', function () {
         });
 
     });
+
+    describe('authenticate', function () {
+        // var spy;
+        it('should logout of Session if token doesnt exist', function () {
+            // localStorage.removeItem('token');
+            // spy = sinon.spy(App.Controllers.Sessions, 'logout');
+            // Suit.Can.authenticate();
+            // expect(spy).toHaveBeenCalled();
+            // change from logout of session to triggering an event?
+            console.info('TODO: Should this be moved to guide?');
+        });
+    });
 });
