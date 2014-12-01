@@ -95,7 +95,7 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
             controller = App.Controllers[routerName],
             scope = router;
 
-        callback = callback || this[name];
+        callback = callback || router[name];
         if (controller) {
             callback = controller[name];
             scope = controller;
@@ -105,6 +105,7 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
 
             var goToRoute = function (args) {
                 if (router.beforeEach) { router.beforeEach.apply(router, args); }
+                callback = callback || router[name];
                 callback.apply(scope, args);
                 if (router.afterEach) { router.afterEach.apply(router, args); }
             };
