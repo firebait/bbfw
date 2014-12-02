@@ -1801,9 +1801,9 @@ Suit.Components.Binders['component-*'] = {
         });
         this.componentView = new Suit.Components[className](attr);
         $el.removeAttr('suit-component-' + componentName);
+        this.componentView.setParent(this.view.models);
         this.componentView.render();
         $el.attr('suit-component-' + componentName);
-        this.componentView.setParent(this.view.models);
     },
 
     unbind: function () {
