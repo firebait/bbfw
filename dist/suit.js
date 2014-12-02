@@ -3665,10 +3665,44 @@ Suit.Components.registerComponent('Video');
             model = model.get(keypath.shift());
         }
 
+        var key = keypath.shift();
+
+        if (key.indexOf('.') > 0) {
+            key = key.split('.');
+            if (key.length > 2) {
+                throw (new Error('Cannot access properties of object on relation with "."'));
+            }
+            model = model.get(key[0]);
+            key = key[1];
+        }
+
+
+
         return {
             model: model,
-            key: keypath.shift()
+            key: key
         };
+    }
+
+
+
+    /**
+     *
+     * Sets an attribute value to 'value' or calls that method with 'value'
+     *
+     * @param {Model|Collection}  obj
+     * @param {String} key
+     * @param {*}      value
+     *
+     * @returns {*} value
+     */
+    function setOrCall(obj, key, value) {
+        if (_.isFunction(obj[key])) {
+            return obj[key](value);
+        } else {
+            obj[key] = value;
+            return value;
+        }
     }
 
     /**
@@ -3682,12 +3716,16 @@ Suit.Components.registerComponent('Video');
         var root = getKeyPathRoot(obj, keypath);
         obj = root.model;
 
-        if (!(obj instanceof Model)) {
-            return obj;
-        }
 
         if (arguments.length === 2) {
+            if (!(obj instanceof Model)) {
+                return _.result(obj, root.key);
+            }
             return obj.get(root.key);
+        }
+
+        if (!(obj instanceof Model)) {
+            return setOrCall(obj, root.key, value);
         }
 
         return obj.set(root.key, value);
@@ -3748,7 +3786,7 @@ Suit.Components.registerComponent('Video');
      */
     function publish(obj, keypath, value) {
         if (obj instanceof Collection) {
-            return _.result(obj, keypath);
+            return setOrCall(obj, keypath, value);
         } else {
             return getterSetter(obj, keypath, value);
         }
