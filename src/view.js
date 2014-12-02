@@ -78,21 +78,6 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
                     key = currentTarget.find('select').attr('data-error-key');
                 }
                 $('body').find('.tooltip[data-error-key="' + key + '"]').hide();
-            },
-            // We are going to listen to form events and trigger them with our custom logic.
-            'submit' : function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                var form = $(event.target);
-                var action = form.attr('action');
-                var method = (form.attr('method') || 'GET').toUpperCase();
-                var attrs = form.serialize();
-                var url = action;
-                if (method === 'GET') {
-                    url += '?' + attrs;
-                }
-                App.request.params = self.serializeObject();
-                Backbone.history.navigate(url, {trigger: true});
             }
         }, this.events);
 
@@ -122,6 +107,9 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             this.listenTo(App.currentUser, 'change:permission', this._removeUnauthorizedElements);
         }
 
+        // Create an errors container to clear the proper errors for the view.
+        this.errors = [];
+
         // Attach this view to the el data('view') property for later use.
         this.$el.data('view', this);
     },
@@ -132,7 +120,10 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     */
     cleanErrors: function () {
         this.$el.find('.error').removeClass('error');
-        $('body').find('.tooltip[data-error-key]').remove();
+        while (this.errors.length) {
+            var el = this.errors.pop();
+            el.remove();
+        }
     },
     /**
       * Handles server response errors for inputs on the view.
@@ -187,6 +178,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
+            this.errors.append(tooltip);
             $('body').append(tooltip);
         }
     },
@@ -433,7 +425,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     },
     /** Method to be implemented for before close handling. */
     beforeClose: function () {
-        // Override and implement your before render logic.     
+        // Override and implement your before render logic.
     },
     /**
       * It closes the view by removing it from DOM, clearing all event and closing all child views.

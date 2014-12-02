@@ -277,28 +277,4 @@ describe('Suit View', function () {
 
     });
 
-    describe('custom events', function () {
-
-        it('should listen to GET submit events on the view', function () {
-            view.$el.append($('<form action="#some_url"><input name="name" value="set"></form>'));
-            var historySpy = sinon.spy(Backbone.history, 'navigate');
-            view.$el.find('form').trigger('submit');
-            expect(historySpy).toHaveBeenCalledOnce();
-            expect(historySpy).toHaveBeenCalledWith('#some_url?name=set', {trigger: true});
-            expect(App.request.params.name).toEqual('set');
-            historySpy.restore();
-        });
-
-        it('should listen to POST submit events on the view', function () {
-            view.$el.append($('<form method="POST" action="#some_url"><input name="name" value="set"></form>'));
-            var historySpy = sinon.spy(Backbone.history, 'navigate');
-            view.$el.find('form').trigger('submit');
-            expect(historySpy).toHaveBeenCalledOnce();
-            expect(historySpy).toHaveBeenCalledWith('#some_url', {trigger: true});
-            expect(App.request.params.name).toEqual('set');
-            historySpy.restore();
-        });
-
-
-    });
 });

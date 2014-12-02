@@ -843,21 +843,6 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
                     key = currentTarget.find('select').attr('data-error-key');
                 }
                 $('body').find('.tooltip[data-error-key="' + key + '"]').hide();
-            },
-            // We are going to listen to form events and trigger them with our custom logic.
-            'submit' : function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                var form = $(event.target);
-                var action = form.attr('action');
-                var method = (form.attr('method') || 'GET').toUpperCase();
-                var attrs = form.serialize();
-                var url = action;
-                if (method === 'GET') {
-                    url += '?' + attrs;
-                }
-                App.request.params = self.serializeObject();
-                Backbone.history.navigate(url, {trigger: true});
             }
         }, this.events);
 
@@ -887,6 +872,9 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             this.listenTo(App.currentUser, 'change:permission', this._removeUnauthorizedElements);
         }
 
+        // Create an errors container to clear the proper errors for the view.
+        this.errors = [];
+
         // Attach this view to the el data('view') property for later use.
         this.$el.data('view', this);
     },
@@ -897,7 +885,10 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     */
     cleanErrors: function () {
         this.$el.find('.error').removeClass('error');
-        $('body').find('.tooltip[data-error-key]').remove();
+        while (this.errors.length) {
+            var el = this.errors.pop();
+            el.remove();
+        }
     },
     /**
       * Handles server response errors for inputs on the view.
@@ -952,6 +943,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
+            this.errors.append(tooltip);
             $('body').append(tooltip);
         }
     },
@@ -1198,7 +1190,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     },
     /** Method to be implemented for before close handling. */
     beforeClose: function () {
-        // Override and implement your before render logic.     
+        // Override and implement your before render logic.
     },
     /**
       * It closes the view by removing it from DOM, clearing all event and closing all child views.
@@ -1480,12 +1472,19 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       */
     initialize: function () {},
     /**
+      Initializes and returns the data object
+      **/
+    getData: function () {
+        this.data = this.data || {};
+        return this.data;
+    },
+    /**
       Sets the analytics cache using cache rule
       @params {String} key - Key that defines the key in the cache.
       @params {object} value - Url that defines the key in the cache.
       **/
     set: function (key, value) {
-        var cache = App.cache;
+        var cache = this.getData();
         cache[key] = {value: value, timestamp: moment().utc()};
     },
     /**
@@ -1493,7 +1492,7 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       @params {String} url - Url that defines the key in the cache.
       **/
     get: function (key) {
-        var cache = App.cache;
+        var cache = this.getData();
         if (this.expired(key)) {
             delete cache[key];
         }
@@ -1505,7 +1504,7 @@ _.extend(Cache.prototype, Events, /** @lends Cache.prototype */{
       @params {String} key - String that defines the key in the cache.
       **/
     expired: function (key) {
-        var cache = App.cache;
+        var cache = this.getData();
         if (!_.has(cache, key) || this.expirationRule(key)) {
             return true;
         } else {
@@ -1622,7 +1621,7 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
             controller = App.Controllers[routerName],
             scope = router;
 
-        callback = callback || this[name];
+        callback = callback || router[name];
         if (controller) {
             callback = controller[name];
             scope = controller;
@@ -1632,6 +1631,7 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
 
             var goToRoute = function (args) {
                 if (router.beforeEach) { router.beforeEach.apply(router, args); }
+                callback = callback || router[name];
                 callback.apply(scope, args);
                 if (router.afterEach) { router.afterEach.apply(router, args); }
             };
@@ -2184,7 +2184,7 @@ Suit.Components.DateRange = Suit.Component.extend(/** @lends Suit.Components.Dat
                 this.endPicker.picker.setMoment(moment(), true);
                 break;
             case 'last_7_days':
-                this.startPicker.picker.setMoment(moment().subtract('days', 7), true);
+                this.startPicker.picker.setMoment(moment().subtract(7, 'days'), true);
                 this.endPicker.picker.setMoment(moment(), true);
                 break;
             case 'this_month':

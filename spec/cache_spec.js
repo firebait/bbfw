@@ -13,7 +13,7 @@ describe('Suit.Cache', function () {
         var momentStub = sinon.stub(window, 'moment');
         momentStub.returns(timestamp);
         cache.set('key', 'value');
-        expect(App.cache.key).toEqual({value: 'value', timestamp: timestamp});
+        expect(cache.data.key).toEqual({value: 'value', timestamp: timestamp});
         momentStub.restore();
     });
 
@@ -22,10 +22,10 @@ describe('Suit.Cache', function () {
         expect(cache.get('key')).toEqual('value');
     });
 
-    it('should not get expired cache', function () {
-        cache.set('key', 'value');
+    it('should return undefined because cached expired', function () {
         cache.expirationRule = function () { return true; };
-        expect(_.isUndefined(cache.get('key'))).toEqual(true);
+        cache.set('key', 'value');
+        expect(cache.get('key')).toBeUndefined();
     });
 
 });
