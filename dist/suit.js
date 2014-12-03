@@ -45,26 +45,26 @@ Suit.Helpers = {
     /** Parse server attributes to camelcase in order to fullfil conventions
     @params {object} response - server response
      */
-    toCamelCaseObject: function (response) {
+    toCamelCaseObject: function (attributes) {
         var self = this;
-        if (_.isArray(response) && _.isObject(response) && response.length > 0 && _.isObject(response[0])) {
-            _.each(response, function (object, index) {
-                response[index] = self.toCamelCaseObject.apply(self, [object]);
+        if (_.isArray(attributes) && _.isObject(attributes) && attributes.length > 0 && _.isObject(attributes[0])) {
+            _.each(attributes, function (object, index) {
+                attributes[index] = self.toCamelCaseObject.apply(self, [object]);
             });
-        } else if (_.isObject(response) && !_.isArray(response)) {
-            _.each(_.keys(response), function (key) {
-                var value = response[key];
+        } else if (_.isObject(attributes) && !_.isArray(attributes)) {
+            _.each(_.keys(attributes), function (key) {
+                var value = attributes[key];
                 var newKey = _.str.camelize(key);
-                delete response[key];
+                delete attributes[key];
                 // We need to parse all objects recursive.
                 if (_.isObject(value)) {
-                    response[newKey] = self.toCamelCaseObject.apply(self, [value]);
+                    attributes[newKey] = self.toCamelCaseObject.apply(self, [value]);
                 } else {
-                    response[newKey] = value;
+                    attributes[newKey] = value;
                 }
             });
         }
-        return response;
+        return attributes;
     },
     /** Replaces commonly-used Windows 1252 encoded chars that do not exist in ASCII or ISO-8859-1 with ISO-8859-1 cognates.*/
     convertToUtf8: function (text) {
@@ -729,7 +729,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
       * @return {string}
       */
     sortOrder: 'asc',
-    /** Model to be used with this collection. */
+    /** Model to be instantiated by this collection. */
     model: Suit.Model,
     /**
       * Comparator function used by the 'sort()' method in order to sort the collection using the 'sortBy' and 'sortOrder' attributes.

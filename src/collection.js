@@ -42,7 +42,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
       * @return {string}
       */
     sortOrder: 'asc',
-    /** Model to be used with this collection. */
+    /** Model to be instantiated by this collection. */
     model: Suit.Model,
     /**
       * Comparator function used by the 'sort()' method in order to sort the collection using the 'sortBy' and 'sortOrder' attributes.
