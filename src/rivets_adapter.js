@@ -132,9 +132,9 @@
         var value = getterSetter(obj, keypath);
 
         // rivets cant iterate over Backbone.Collection -> return Array
-        if (value instanceof Collection) {
-            return value.models;
-        }
+        // if (value instanceof Collection) {
+        //     return value.models;
+        // }
 
         return value;
     }

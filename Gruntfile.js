@@ -57,7 +57,7 @@ module.exports = function (grunt) {
                     '<%= src.path %>/rivets_binders.js',
                     '<%= src.path %>/start.js'
                 ],
-                tasks: ['jshint']
+                tasks: ['compile', 'jshint']
             },
             jst: {
                 files: ['<%= src.path %>/components/*.jst.ejs'],
@@ -235,13 +235,17 @@ module.exports = function (grunt) {
         grunt.task.run(tasks);
     });
 
-    grunt.registerTask('build', [
-        'clean',
+    grunt.registerTask('compile', [
         'jst',
-        'jshint',
-        'jasmine',
         'concat',
         'uglify',
+    ]);
+
+    grunt.registerTask('build', [
+        'clean',
+        'jshint',
+        'jasmine',
+        'compile',
         'jsdoc'
     ]);
 

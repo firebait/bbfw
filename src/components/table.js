@@ -32,12 +32,109 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.$tbody = this.find('tbody').first();
         var keypath = (this.collection instanceof Suit.Collection) ? 'collection.models' : 'collection';
         this.$tbody.find('tr').first().attr('suit-each-row', keypath);
+        this.listenTo(this.collection, 'sort', this._updateHeaders);
+    },
+
+    beforeClose: function () {
+        if (_.has(this.options, 'infiniteScroll')) {
+            this._teardownInfiniteScroll();
+        }
+    },
+
+    afterRender: function () {
+        if (_.has(this.options, 'infiniteScroll')) {
+            this._setupInfiniteScroll();
+        }
+        this.collection.sort();
+    },
+
+    // PRIVATE METHODS
+
+    _updateHeaders: function () {
+        var self = this,
+            $ele;
+        _.each(this.find('th a.sortable'), function (element) {
+            $ele = $(element);
+            if (self.collection.sortBy === $ele.attr('data-sort-by')) {
+                $ele.addClass('active ' + self.collection.sortOrder);
+            } else {
+                $ele.data('current-sort-order', false);
+                $ele.removeClass('active asc desc');
+            }
+        });
+    },
+
+    _setupInfiniteScroll: function () {
+        this.fetchingNextPage = false;
+        var thHeight,
+            $th,
+            $table,
+            infiniteScrollWrapper = $('<div class="infinite-scroll"><div class="infinite-scroll-container"></div></div>');
+
+        infiniteScrollWrapper.css({position: 'relative'}).find('.infinite-scroll-container').css({'overflow-y': 'scroll'});
+
+        if (this.$el.attr('height')) {
+            this.options.heightRestricted = true;
+            infiniteScrollWrapper.find('.infinite-scroll-container').css({height: this.$el.attr('height')});
+        }
+
+        this.$el.wrap(infiniteScrollWrapper);
+
+        this.$thead.find('tr').first().children().each(function (index, th) {
+            $th = $(th);
+            thHeight = $th.height();
+            $th.width($th.width());
+        });
+
+        $table = $('<table/>');
+        $table.height(thHeight);
+
+        this.$newThead = this.$thead.clone();
+        this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
+        this.$el.closest('.infinite-scroll').prepend(this.$newThead);
+        this.$newThead.wrap($table);
+
+        this.$thead.find('a.sortable').removeClass('sortable');
+
+        this.$thead.css('visibility', 'hidden');
+        this.$thead.find('th').css({'line-height': '0px', 'height': '0px'});
+
+        this.$scrollingView = this.$el.closest('.infinite-scroll-container');
+        this.$loader = $('<div class="infinite-scroll-loader"/>').css({position: 'relative', height: 100});
+        this.$scrollingView.append(this.$loader);
+        this.$loader.hide();
+        this.el = this.$el.closest('.infinite-scroll')[0];
+        this.$el = $(this.el);
+
+        if (this.options.heightRestricted) {
+            this.$scrollingView.on('scroll', _.bind(this._scrollViewScrolled, this));
+        } else {
+            this.__windowScrolled =  _.bind(this._windowScrolled, this);
+            this.$window = $(window);
+            this.$window.on('scroll', this.__windowScrolled);
+        }
+    },
+
+    _teardownInfiniteScroll: function () {
+        this.$newThead.find('a.sortable').off('click');
+        if (this.options.heightRestricted) {
+            this.$scrollingView.off('scroll');
+        } else {
+            this.$window.off('scroll', this.__windowScrolled);
+            delete this.__windowScrolled;
+            delete this.$window;
+        }
+    },
+
+    _removeInfiniteLoader: function () {
+        this.parent.removeLoader('.infinite-scroll-loader');
+        this.find('.infinite-scroll-loader').hide();
+        this.fetchingNextPage = false;
     },
 
     _sortTable: function (event) {
         event.preventDefault();
-        var $ele,
-            href,
+        var href,
             url,
             $target = $(event.target),
             sortOrder = $target.data('default-sort'),
@@ -55,91 +152,50 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
         this.collection.sortBy    = sortBy;
         this.collection.sortOrder = sortOrder;
-        this.collection.sort();
+        if (_.has(this.options, 'infiniteScroll')) {
+            this.collection.reset([]);
+            this.trigger('table:sort', this.collection);
+        } else {
+            this.collection.sort();
+        }
+        //  Move to sort event
         href = $target.attr('href');
         url = href.indexOf('?') === -1 ? href + '?' : href;
         url += $.param({ sortBy: sortBy, sortOrder: sortOrder });
-        this.find('th a.sortable').each(function (index, element) {
-            if ($target[0] !== element) {
-                $ele = $(element);
-                $ele.data('current-sort-order', false);
-                $ele.removeClass('active asc desc');
-            }
-        });
         Backbone.history.navigate(url);
     },
 
-    // setupInfiniteScroll: function () {
-    //     this.fetchingNextPage = false;
-    //     var thHeight,
-    //         $th,
-    //         table,
-    //         infiniteScrollWrapper = $('<div class="infinite-scroll"><div class="infinite-scroll-container"></div></div>');
-
-    //     infiniteScrollWrapper.css({position: 'relative'}).find('.infinite-scroll-container').css({overflow: 'auto', height: '400px'});
-    //     this.$el.wrap(infiniteScrollWrapper);
-
-    //     this.$thead.find('tr').first().children().each(function (index, th) {
-    //         $th = $(th);
-    //         thHeight = $th.height();
-    //         $th.width($th.width());
-    //     });
-
-    //     table = $('<table/>').height(thHeight);
-
-    //     this.$newThead = this.$thead.clone();
-    //     this.$newThead.css({position: 'absolute', 'z-index': 10, top: 0, left: 0});
-    //     this.$newThead.wrap(table);
-    //     this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
-    //     this.$el.closest('.infinite-scroll').prepend(this.$newThead);
-
-    //     this.$thead.css('visibility', 'hidden');
-
-    //     this.$scrollingView = this.$el.closest('.infinite-scroll-container');
-    //     this.$scrollingView.css({'margin-top': -thHeight});
-    //     this.$loader = $('<div class="infinite-scroll-loader"/>').css({position: 'relative', height: 100});
-    //     this.$scrollingView.append(this.$loader);
-    //     this.$scrollingView.on('scroll', _.bind(this._scrollViewScrolled, this));
-    // },
-
-    // teardownInfiniteScroll: function () {
-    //     this.$newThead.find('a.sortable').off('click');
-    //     this.$scrollingView.off('scroll');
-    // },
-
-    // removeInfiniteLoader: function () {
-    //     this.parent.removeLoader('.infinite-scroll-loader');
-    //     this.find('.infinite-scroll-loader').hide();
-    //     this.fetchingNextPage = false;
-    // },
-
-    // _scrollViewScrolled: function (event) {
-    //     if (this.fetchingNextPage) {
-    //         event.preventDefault();
-    //         event.stopPropagation();
-    //         return;
-    //     }
-    //     var offset = (this.$scrollingView[0].scrollHeight - this.$scrollingView.height());
-    //     if (this.$scrollingView.scrollTop() === offset && this.fetchingNextPage === false) {
-    //         event.preventDefault();
-    //         this.fetchingNextPage = true;
-    //         this.find('.infinite-scroll-loader').show();
-    //         this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
-    //         this.trigger('next', this.collection, _.bind(this.removeInfiniteLoader, this));
-    //     }
-    // },
-
-    beforeClose: function () {
-        // if (_.has(this.options, 'infiniteScroll')) {
-        //     this.teardownInfiniteScroll();
-        // }
+    _windowScrolled: function (event) {
+        if (this.fetchingNextPage) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+        var offset = ((this.$el.height() + this.$el.offset().top) - this.$window.height()) - 100;
+        if (this.$window.scrollTop() >= offset && this.fetchingNextPage === false) {
+            event.preventDefault();
+            this._next();
+        }
     },
 
-    afterRender: function () {
-        // if (_.has(this.options, 'infiniteScroll')) {
-        //     this.setupInfiniteScroll();
-        // }
-        this.find('th a.sortable[data-sort-by="' + this.options.sort + '"]').first().trigger('click');
+    _scrollViewScrolled: function (event) {
+        if (this.fetchingNextPage) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+        var offset = (this.$scrollingView[0].scrollHeight - this.$scrollingView.height());
+        if (this.$scrollingView.scrollTop() === offset && this.fetchingNextPage === false) {
+            event.preventDefault();
+            this._next();
+        }
+    },
+
+    _next: function () {
+        this.fetchingNextPage = true;
+        this.find('.infinite-scroll-loader').show();
+        this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
+        this.trigger('table:next', this.collection, _.bind(this._removeInfiniteLoader, this));
     }
 });
 
