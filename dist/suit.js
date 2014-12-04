@@ -1558,6 +1558,12 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
     initialize: function () {
         this.on('all', this.storeRoute);
     },
+    /** Handles rendering of the layout for a router **/
+    beforeEach: function () {
+        return;
+    },
+    /** Alias for beforeEach **/
+    layout: function () { this.beforeEach(); },
     /**
       * Stores the route history object, so that we use for history management
       * purposes (like going to last known route).
@@ -1630,7 +1636,7 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
         var f = function () {
 
             var goToRoute = function (args) {
-                if (router.beforeEach) { router.beforeEach.apply(router, args); }
+                if (router.layout) { router.layout.apply(router, args); }
                 callback = callback || router[name];
                 callback.apply(scope, args);
                 if (router.afterEach) { router.afterEach.apply(router, args); }
