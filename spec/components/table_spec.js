@@ -320,6 +320,16 @@ describe('Suit Table Component', function () {
                 expect(spy).toHaveBeenCalledOnce();
                 expect(view.find('.infinite-scroll-loader').is(':visible')).toEqual(false);
             });
+
+            it('should not show a loader when scrolled to bottom if enableInfiniteScroll is false', function () {
+                expect(view.find('.infinite-scroll-loader').is(':visible')).toEqual(false);
+                tableComponent.enableInfiniteScroll = false;
+                spy = sinon.spy(tableComponent, '_next');
+                var container = view.find('.infinite-scroll-container');
+                container.scrollTop(container[0].scrollHeight);
+                container.trigger('scroll');
+                expect(spy.called).toEqual(false);
+            });
         });
 
         describe('with no height', function () {
@@ -413,6 +423,16 @@ describe('Suit Table Component', function () {
                 container.trigger('scroll');
                 expect(spy).toHaveBeenCalledOnce();
                 expect(view.find('.infinite-scroll-loader').is(':visible')).toEqual(false);
+            });
+
+            it('should not show a loader when scrolled to bottom if enableInfiniteScroll is false', function () {
+                expect(view.find('.infinite-scroll-loader').is(':visible')).toEqual(false);
+                spy = sinon.spy(tableComponent, '_next');
+                tableComponent.enableInfiniteScroll = false;
+                var container = $(window);
+                container[0].scroll(0, $(document).height());
+                container.trigger('scroll');
+                expect(spy.called).toEqual(false);
             });
         });
 

@@ -3274,7 +3274,8 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     _setupInfiniteScroll: function () {
-        this.fetchingNextPage = false;
+        this.enableInfiniteScroll = true;
+        this._fetchingNextPage = false;
         var thHeight,
             $th,
             $table,
@@ -3306,7 +3307,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.$thead.find('a.sortable').removeClass('sortable');
 
         this.$thead.css('visibility', 'hidden');
-        this.$thead.find('th').css({'line-height': '0px', 'height': '0px'});
+        this.$thead.find('th').css({'line-height': '0px', 'height': '0px', 'border': '0px'});
 
         this.$scrollingView = this.$el.closest('.infinite-scroll-container');
         this.$loader = $('<div class="infinite-scroll-loader"/>').css({position: 'relative', height: 100});
@@ -3338,7 +3339,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     _removeInfiniteLoader: function () {
         this.parent.removeLoader('.infinite-scroll-loader');
         this.find('.infinite-scroll-loader').hide();
-        this.fetchingNextPage = false;
+        this._fetchingNextPage = false;
     },
 
     _sortTable: function (event) {
@@ -3375,33 +3376,33 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     _windowScrolled: function (event) {
-        if (this.fetchingNextPage) {
+        if (this._fetchingNextPage || !this.enableInfiniteScroll) {
             event.preventDefault();
             event.stopPropagation();
             return;
         }
         var offset = ((this.$el.height() + this.$el.offset().top) - this.$window.height()) - 100;
-        if (this.$window.scrollTop() >= offset && this.fetchingNextPage === false) {
+        if (this.$window.scrollTop() >= offset && this._fetchingNextPage === false) {
             event.preventDefault();
             this._next();
         }
     },
 
     _scrollViewScrolled: function (event) {
-        if (this.fetchingNextPage) {
+        if (this._fetchingNextPage || !this.enableInfiniteScroll) {
             event.preventDefault();
             event.stopPropagation();
             return;
         }
         var offset = (this.$scrollingView[0].scrollHeight - this.$scrollingView.height());
-        if (this.$scrollingView.scrollTop() === offset && this.fetchingNextPage === false) {
+        if (this.$scrollingView.scrollTop() === offset && this._fetchingNextPage === false) {
             event.preventDefault();
             this._next();
         }
     },
 
     _next: function () {
-        this.fetchingNextPage = true;
+        this._fetchingNextPage = true;
         this.find('.infinite-scroll-loader').show();
         this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
         this.trigger('table:next', this.collection, _.bind(this._removeInfiniteLoader, this));
