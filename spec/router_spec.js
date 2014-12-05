@@ -107,7 +107,6 @@ describe('Suit Router', function () {
             expect(spy.calledOnce).toEqual(true);
             router = null;
             spy.restore();
-
         });
 
         it('should call the default path if there is no path', function () {
@@ -139,6 +138,31 @@ describe('Suit Router', function () {
             });
             spy = null;
 
+        });
+
+        it('should call the layout function and the beforeEach function when it changes router', function () {
+            spy = [];
+            router = new App.Routers.Main();
+            var otherRouter = new App.Routers.Other();
+            spy.push(sinon.spy(router, 'layout'));
+            spy.push(sinon.spy(router, 'beforeEach'));
+            spy.push(sinon.spy(otherRouter, 'layout'));
+            spy.push(sinon.spy(otherRouter, 'beforeEach'));
+
+            Backbone.history.navigate('#/page-one', { trigger: true });
+            expect(spy[1].calledOnce).toEqual(true);
+            expect(spy[1].calledOnce).toEqual(true);
+            expect(spy[2].calledOnce).toEqual(false);
+            expect(spy[3].calledOnce).toEqual(false);
+
+            Backbone.history.navigate('#/other-page', { trigger: true });
+            expect(spy[2].calledOnce).toEqual(true);
+            expect(spy[3].calledOnce).toEqual(true);
+
+            _.each(spy, function (s) {
+                s.restore();
+            });
+            spy = null;
         });
 
         it('should be able to use multiple routers', function () {

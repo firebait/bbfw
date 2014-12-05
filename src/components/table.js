@@ -30,7 +30,10 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         Suit.Component.prototype.initialize.apply(this, [options]);
         this.$thead = this.find('thead').first();
         this.$tbody = this.find('tbody').first();
-        var keypath = (this.collection instanceof Suit.Collection) ? 'collection.models' : 'collection';
+        var keypath = (this.collection instanceof Suit.Collection) ? 'collection.models' : false;
+        if (keypath === false) {
+            throw (new Error('data-table-collection must be an instance of Suit.Collection'));
+        }
         this.$tbody.find('tr').first().attr('suit-each-row', keypath);
         this.listenTo(this.collection, 'sort', this._updateHeaders);
     },

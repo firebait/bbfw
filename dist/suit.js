@@ -945,7 +945,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
-            this.errors.append(tooltip);
+            this.errors.push(tooltip);
             $('body').append(tooltip);
         }
     },
@@ -1560,6 +1560,12 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
     initialize: function () {
         this.on('all', this.storeRoute);
     },
+    /** Handles rendering of the layout for a router **/
+    beforeEach: function () {
+        return;
+    },
+    /** Alias for beforeEach **/
+    layout: function () { this.beforeEach(); },
     /**
       * Stores the route history object, so that we use for history management
       * purposes (like going to last known route).
@@ -1632,7 +1638,7 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
         var f = function () {
 
             var goToRoute = function (args) {
-                if (router.beforeEach) { router.beforeEach.apply(router, args); }
+                if (router.layout) { router.layout.apply(router, args); }
                 callback = callback || router[name];
                 callback.apply(scope, args);
                 if (router.afterEach) { router.afterEach.apply(router, args); }
@@ -3396,12 +3402,14 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     _stickHeaders: function () {
-        var table = this.$newThead.closest('table');
-        if (this.$window.scrollTop() > this.$newThead.offset().top && !table.data('isStuck')) {
+        var table = this.$newThead.closest('table'),
+            scrollTop = this.$window.scrollTop(),
+            thOffset = this.$newThead.offset().top;
+        if (scrollTop > thOffset && !table.data('isStuck')) {
             table.data('isStuck', true);
-            table.data('startingOffset', this.$newThead.offset().top);
+            table.data('startingOffset', thOffset);
             table.css({position: 'fixed', 'z-index': 50, width: table.width(), top: 0});
-        } else if (table.data('isStuck') === true && this.$window.scrollTop() < table.data('startingOffset')) {
+        } else if (table.data('isStuck') === true && scrollTop < table.data('startingOffset')) {
             table.data('isStuck', false);
             table.data('startingOffset', false);
             table.css({position: 'absolute'});

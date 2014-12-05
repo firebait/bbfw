@@ -4,13 +4,55 @@ describe('Suit Table Component', function () {
 
     var collection, view, spy, el, html, tableComponent, model, testDiv;
 
+    it('should throw an error with an invalid collection', function () {
+        html = '<div><span></span><table id="itemsCollection" suit-component-table data data-table-collection="collection" data-table-sort="id">';
+        html += '<thead>';
+        html += '<th><a href="#table/index" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
+        html += '<th><a href="#table/index?foo=bar" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
+        html += '</thead>';
+        html += '<tbody><tr>';
+        html += '<td>{ row:id }</td>';
+        html += '<td>{ row:name }</td>';
+        html += '</tr></tbody></table></div>';
+        el = $(html)[0];
+
+
+        collection = new Suit.Collection([
+            { id: 1, name: 'Foo' },
+            { id: 2, name: 'Bar' }
+        ]);
+
+        var ModelWithCollection = Suit.Model.extend({
+            relations: [
+                {
+                    type: Backbone.HasMany,
+                    key: 'items',
+                    collectionType: 'Suit.Collection',
+                    relatedModel: 'Suit.Model',
+                    includeInJSON: false
+                }
+            ]
+        });
+
+        model = new ModelWithCollection({});
+        model.get('items').reset([
+            { id: 3, name: 'Child Foo' },
+            { id: 4, name: 'Child Bar' }
+        ]);
+
+        view = new Suit.View({el: el, collection: model});
+
+
+        expect(view.render).toThrow(new Error('data-table-collection must be an instance of Suit.Collection'));
+    });
+
     describe('without infinite scroll', function () {
 
         beforeEach(function () {
             html = '<div><span></span><table id="itemsCollection" suit-component-table data data-table-collection="collection" data-table-sort="id">';
             html += '<thead>';
-            html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
-            html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
+            html += '<th><a href="#table/index" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
+            html += '<th><a href="#table/index?foo=bar" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
             html += '</thead>';
             html += '<tbody><tr>';
             html += '<td>{ row:id }</td>';
