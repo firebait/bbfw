@@ -41,6 +41,8 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         this.options = _.isObject(this.options) ? this.options : {};
         this.options = _.extend(this.options, options);
 
+        this.components = {};
+
         this.setParent(this.options.parent);
         this.children = this.options.children || [];
 

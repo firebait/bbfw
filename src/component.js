@@ -15,21 +15,23 @@ Suit.Components.registerComponent = function (className) {
 Suit.Components.Binders['component-*'] = {
     block: true,
     bind: function () {
-        var $el = $(this.el);
-        var componentName = _.str.camelize(_.str.underscored(this.args[0]));
-        var className = _.str.classify(_.str.underscored(componentName));
-        var data = {};
+        var $el = $(this.el),
+            id = $el.attr('id'),
+            componentName = _.str.camelize(_.str.underscored(this.args[0])),
+            className = _.str.classify(_.str.underscored(componentName)),
+            data = {},
+            self = this,
+            attr;
         _.each($el.data(), function (value, key) {
             if (_.str.startsWith(key, componentName)) {
                 data[key] = value;
             }
         });
-        var attr = {el: this.el};
-        var self = this;
+        attr = {el: this.el};
         _.each(data, function (value, key) {
-            var keypath = value.split(':');
-            var rootModel = self.view.models[keypath.shift()];
-            var model = rootModel;
+            var keypath = value.split(':'),
+                rootModel = self.view.models[keypath.shift()],
+                model = rootModel;
             if (rootModel && keypath.length > 0) {
                 model = self.view.adapters[':'].read(rootModel, keypath.join(':'));
             }
@@ -40,6 +42,9 @@ Suit.Components.Binders['component-*'] = {
         this.componentView.setParent(this.view.models);
         this.componentView.render();
         $el.attr('suit-component-' + componentName);
+        if (id) {
+            this.view.models.components[id] = this.componentView;
+        }
     },
 
     unbind: function () {
