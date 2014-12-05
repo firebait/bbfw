@@ -945,7 +945,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
-            this.errors.append(tooltip);
+            this.errors.push(tooltip);
             $('body').append(tooltip);
         }
     },
