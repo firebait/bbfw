@@ -74,6 +74,10 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
         infiniteScrollWrapper.css({position: 'relative'}).find('.infinite-scroll-container').css({'overflow-y': 'scroll'});
 
+        if (_.has(this.options, 'stickyHeaders')) {
+            this._stickyHeaders = true;
+        }
+
         if (this.$el.attr('height')) {
             this.options.heightRestricted = true;
             infiniteScrollWrapper.find('.infinite-scroll-container').css({height: this.$el.attr('height')});
@@ -167,6 +171,9 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     _windowScrolled: function (event) {
+        if (this._stickyHeaders) {
+            this._stickHeaders();
+        }
         if (this._fetchingNextPage || !this.enableInfiniteScroll) {
             event.preventDefault();
             event.stopPropagation();
@@ -176,6 +183,21 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         if (this.$window.scrollTop() >= offset && this._fetchingNextPage === false) {
             event.preventDefault();
             this._next();
+        }
+    },
+
+    _stickHeaders: function () {
+        var table = this.$newThead.closest('table'),
+            scrollTop = this.$window.scrollTop(),
+            thOffset = this.$newThead.offset().top;
+        if (scrollTop > thOffset && !table.data('isStuck')) {
+            table.data('isStuck', true);
+            table.data('startingOffset', thOffset);
+            table.css({position: 'fixed', 'z-index': 50, width: table.width(), top: 0});
+        } else if (table.data('isStuck') === true && scrollTop < table.data('startingOffset')) {
+            table.data('isStuck', false);
+            table.data('startingOffset', false);
+            table.css({position: 'absolute'});
         }
     },
 

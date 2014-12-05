@@ -434,6 +434,94 @@ describe('Suit Table Component', function () {
                 container.trigger('scroll');
                 expect(spy.called).toEqual(false);
             });
+
+            describe('sticky headers', function () {
+                beforeEach(function () {
+
+                    testDiv = $('<div id="container-' + jasmine.getEnv().currentSpec.id + '"></div>');
+                    $('body').append(testDiv);
+
+                    html = '<div><span></span><table id="itemsCollection" suit-component-table data-table-infinite-scroll data-table-sticky-headers data-table-collection="collection" data-table-sort="id">';
+                    html += '<thead>';
+                    html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
+                    html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
+                    html += '</thead>';
+                    html += '<tbody><tr>';
+                    html += '<td>{ row:id }</td>';
+                    html += '<td>{ row:name }</td>';
+                    html += '</tr></tbody></table></div>';
+                    el = $(html)[0];
+
+
+                    collection = new Suit.Collection([]);
+                    Backbone.Relational.store.reset();
+
+                    var items = [];
+
+                    for (var i = 0; i < 200; i++) {
+                        items.push({ id: i, name: 'Foo' + i });
+                    }
+                    collection.reset(items);
+
+                    var ModelWithCollection = Suit.Model.extend({
+                        relations: [
+                            {
+                                type: Backbone.HasMany,
+                                key: 'items',
+                                collectionType: 'Suit.Collection',
+                                relatedModel: 'Suit.Model',
+                                includeInJSON: false
+                            }
+                        ]
+                    });
+
+                    model = new ModelWithCollection({});
+                    model.get('items').reset([
+                        { id: 3, name: 'Child Foo' },
+                        { id: 4, name: 'Child Bar' }
+                    ]);
+
+                    view = new Suit.View({el: el, collection: collection});
+                    view.render();
+                    tableComponent = view.components.itemsCollection;
+                    testDiv.html(view.el);
+                });
+
+                afterEach(function () {
+                    testDiv.remove();
+                    if (spy.restore) {
+                        spy.restore();
+                    }
+                    Backbone.Relational.store.reset();
+                });
+
+                it('should stick to top of page after scrolling past header', function () {
+                    var table = tableComponent.$newThead.closest('table');
+                    expect(table.css('position')).not.toEqual('fixed');
+                    var container = $(window);
+                    container[0].scroll(0, $(document).height());
+                    container.trigger('scroll');
+                    expect(table.css('position')).toEqual('fixed');
+                    expect(table.css('top')).toEqual('0px');
+
+                });
+
+                it('should unstick after scrolling back above header', function () {
+                    var table = tableComponent.$newThead.closest('table');
+                    expect(table.css('position')).not.toEqual('fixed');
+                    var container = $(window);
+                    container[0].scroll(0, $(document).height());
+                    container.trigger('scroll');
+                    expect(table.css('position')).toEqual('fixed');
+                    expect(table.css('top')).toEqual('0px');
+
+                    container[0].scroll(0, 0);
+                    container.trigger('scroll');
+                    expect(table.css('position')).not.toEqual('fixed');
+
+                });
+
+            });
         });
 
     });
