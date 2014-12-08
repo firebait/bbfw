@@ -3223,15 +3223,17 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
       * @classdesc Suit Component Framework Table Component.
       *
       * This component is meant to be used along with tabular data. The data will
-      * be handled from the collection (which is passed as an attribute to the
-      * component's instance).
+      * be handled from the collection (which is passed as a keypath to the
+      * component element's data-table-collection attribute).
       *
       * The Table Component will provide with sorting functionalities (linked to
       * collection's default sorting functionality). If the user trigger a collection
       * sort change, the Table Component will interact with the changes.
       *
-      * Use the <strong>dataTableView</strong> parameter in order to define what
-      * view will be used on the rows.
+      * data-table-* options:
+      *  -  collection //the keypath to the collection
+      *  -  infinite-scroll //enables auto-pagination when you scroll past the bottom of the table
+      *  -  sticky-headers // enables the headers to stick to the top of the page when scrolling for infinite-scroll enabled tables
       *
       * @augments Suit.Component
       * @constructs Suit.Components.Table
@@ -3245,7 +3247,10 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         Suit.Component.prototype.initialize.apply(this, [options]);
         this.$thead = this.find('thead').first();
         this.$tbody = this.find('tbody').first();
-        var keypath = (this.collection instanceof Suit.Collection) ? 'collection.models' : 'collection';
+        var keypath = (this.collection instanceof Suit.Collection) ? 'collection.models' : false;
+        if (keypath === false) {
+            throw (new Error('data-table-collection must be an instance of Suit.Collection'));
+        }
         this.$tbody.find('tr').first().attr('suit-each-row', keypath);
         this.listenTo(this.collection, 'sort', this._updateHeaders);
     },
@@ -3265,6 +3270,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     // PRIVATE METHODS
 
+    /* Callback from collection "sort" event.  It updates the the thead > th's to reflect current sort-by/sort-order */
     _updateHeaders: function () {
         var self = this,
             $ele;
@@ -3279,6 +3285,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         });
     },
 
+    /* Set's up infinite scroll on table. Wraps table, sets up listeners, etc. */
     _setupInfiniteScroll: function () {
         this.enableInfiniteScroll = true;
         this._fetchingNextPage = false;
@@ -3335,23 +3342,24 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
     },
 
+    /* Removes call backs, options and variables for infinite scrolling. */
     _teardownInfiniteScroll: function () {
         this.$newThead.find('a.sortable').off('click');
         if (this.options.heightRestricted) {
             this.$scrollingView.off('scroll');
         } else {
             this.$window.off('scroll', this.__windowScrolled);
-            delete this.__windowScrolled;
-            delete this.$window;
         }
     },
 
+    /* Hides loader that was shows during a table:next event */
     _removeInfiniteLoader: function () {
         this.parent.removeLoader('.infinite-scroll-loader');
         this.find('.infinite-scroll-loader').hide();
         this._fetchingNextPage = false;
     },
 
+    /* Bound to th a.sortable links, sorts collection if non-infinite scroll based, otherwise triggers a table:sort event */
     _sortTable: function (event) {
         event.preventDefault();
         var href,
@@ -3373,18 +3381,17 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.collection.sortBy    = sortBy;
         this.collection.sortOrder = sortOrder;
         if (_.has(this.options, 'infiniteScroll')) {
-            this.collection.reset([]);
             this.trigger('table:sort', this.collection);
         } else {
             this.collection.sort();
         }
-        //  Move to sort event
         href = $target.attr('href');
         url = href.indexOf('?') === -1 ? href + '?' : href;
         url += $.param({ sortBy: sortBy, sortOrder: sortOrder });
         Backbone.history.navigate(url);
     },
 
+    /* Bound to window scroll event, checks if bottom of the table has come into view, if so, calls _next */
     _windowScrolled: function (event) {
         if (this._stickyHeaders) {
             this._stickHeaders();
@@ -3401,6 +3408,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
     },
 
+    /* For window based infinite scroll tables, sticks headers if they have reached the top of the page on scrolling. Called from _windowScrolled */
     _stickHeaders: function () {
         var table = this.$newThead.closest('table'),
             scrollTop = this.$window.scrollTop(),
@@ -3416,6 +3424,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
     },
 
+    /* Bound to overflow container scroll event, checks if bottom of the content has come into view, if so, calls _next */
     _scrollViewScrolled: function (event) {
         if (this._fetchingNextPage || !this.enableInfiniteScroll) {
             event.preventDefault();
@@ -3429,6 +3438,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
     },
 
+    /* Called when bottom of infinite scroll based table comes into view, adds a loader and fires a table:next event*/
     _next: function () {
         this._fetchingNextPage = true;
         this.find('.infinite-scroll-loader').show();
