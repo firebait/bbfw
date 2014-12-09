@@ -22,9 +22,9 @@ __p += '<div class=\'title-box clear\'>\n    <h4 class=\'f-left\'>' +
 ((__t = ( title )) == null ? '' : __t) +
 '</h4>\n</div>\n<div class=\'content-box\'>\n    <div class=\'grid1\'>\n        <p>' +
 ((__t = ( text )) == null ? '' : __t) +
-'</p>\n    </div>\n</div>\n<div class=\'footer-box\'>\n    <button class=\'btn-primary-' +
+'</p>\n    </div>\n</div>\n<div class=\'footer-box\'>\n    <button class=\'btn-primary ' +
 ((__t = ( color )) == null ? '' : __t) +
-' yes\'>Yes</button> <button class=\'btn-secondary-' +
+' yes\'>Yes</button> <button class=\'btn-secondary ' +
 ((__t = ( color )) == null ? '' : __t) +
 ' no\'>No</button>\n</div>';
 
