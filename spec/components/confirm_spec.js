@@ -14,8 +14,8 @@ describe('Suit Component Confirm', function () {
             expect(confirm.$el.find('.content-box p').text()).toBe('Are you sure?');
             expect(confirm.$el.find('.yes').length).toBe(1);
             expect(confirm.$el.find('.no').length).toBe(1);
-            expect(confirm.$el.find('.btn-primary-blue').length).toBe(1);
-            expect(confirm.$el.find('.btn-secondary-blue').length).toBe(1);
+            expect(confirm.$el.find('.btn-primary.blue').length).toBe(1);
+            expect(confirm.$el.find('.btn-secondary.blue').length).toBe(1);
         });
 
         it('should render the confirm modal successfuly with custom params', function () {
@@ -27,8 +27,8 @@ describe('Suit Component Confirm', function () {
 
             expect(confirm.$el.find('h4').text()).toBe('This title');
             expect(confirm.$el.find('.content-box p').text()).toBe('This text');
-            expect(confirm.$el.find('.btn-primary-own-color').length).toBe(1);
-            expect(confirm.$el.find('.btn-secondary-own-color').length).toBe(1);
+            expect(confirm.$el.find('.btn-primary.own-color').length).toBe(1);
+            expect(confirm.$el.find('.btn-secondary.own-color').length).toBe(1);
         });
 
         it('should initialize the confirm with default params', function () {
