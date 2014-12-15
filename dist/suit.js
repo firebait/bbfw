@@ -3260,6 +3260,14 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     afterRender: function () {
+        if (_.has(this.options, 'infiniteScroll')) {
+            var children = this.$newThead.find('tr').first().children(),
+                $th;
+            this.$thead.find('tr').first().children().each(function (index, th) {
+                $th = $(th);
+                children.eq(index).width($th.width());
+            });
+        }
         this.collection.sort();
     },
 
@@ -3284,9 +3292,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     _setupInfiniteScroll: function () {
         this.enableInfiniteScroll = true;
         this._fetchingNextPage = false;
-        var thHeight,
-            $th,
-            $table,
+        var $table,
             infiniteScrollWrapper = $('<div class="infinite-scroll"><div class="infinite-scroll-container"></div></div>');
 
         infiniteScrollWrapper.css({position: 'relative'}).find('.infinite-scroll-container').css({'overflow-y': 'scroll'});
@@ -3302,17 +3308,9 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
         this.$el.wrap(infiniteScrollWrapper);
 
-        this.$thead.find('tr').first().children().each(function (index, th) {
-            $th = $(th);
-            thHeight = $th.height();
-            $th.width($th.width());
-        });
-
         $table = $('<table/>');
-        $table.height(thHeight);
 
         this.$newThead = this.$thead.clone();
-        // this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
         this.$el.closest('.infinite-scroll').prepend(this.$newThead);
         this.$newThead.wrap($table);
 
