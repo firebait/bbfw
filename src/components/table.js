@@ -47,10 +47,13 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     afterRender: function () {
         if (_.has(this.options, 'infiniteScroll')) {
             var children = this.$newThead.find('tr').first().children(),
-                $th;
+                $th, w;
             this.$thead.find('tr').first().children().each(function (index, th) {
                 $th = $(th);
-                children.eq(index).width($th.width());
+                w = $th.width();
+                if (w > 0) {
+                    children.eq(index).width();
+                }
             });
         }
         this.collection.sort();
