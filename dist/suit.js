@@ -3230,11 +3230,6 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
       * collection's default sorting functionality). If the user trigger a collection
       * sort change, the Table Component will interact with the changes.
       *
-      * data-table-* options:
-      *  -  collection //the keypath to the collection
-      *  -  infinite-scroll //enables auto-pagination when you scroll past the bottom of the table
-      *  -  sticky-headers // enables the headers to stick to the top of the page when scrolling for infinite-scroll enabled tables
-      *
       * @augments Suit.Component
       * @constructs Suit.Components.Table
       */
@@ -3253,6 +3248,9 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
         this.$tbody.find('tr').first().attr('suit-each-row', keypath);
         this.listenTo(this.collection, 'sort', this._updateHeaders);
+        if (_.has(this.options, 'infiniteScroll')) {
+            this._setupInfiniteScroll();
+        }
     },
 
     beforeClose: function () {
@@ -3262,9 +3260,6 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     afterRender: function () {
-        if (_.has(this.options, 'infiniteScroll')) {
-            this._setupInfiniteScroll();
-        }
         this.collection.sort();
     },
 
@@ -3317,7 +3312,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         $table.height(thHeight);
 
         this.$newThead = this.$thead.clone();
-        this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
+        // this.$newThead.find('a.sortable').on('click', _.bind(this._sortTable, this));
         this.$el.closest('.infinite-scroll').prepend(this.$newThead);
         this.$newThead.wrap($table);
 
