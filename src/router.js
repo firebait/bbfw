@@ -36,6 +36,8 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
     beforeEach: function () {
         return;
     },
+    /** Before object that contains a list of function names to be is only called on first load or router switching. **/
+    before: {},
     /** Alias for beforeEach **/
     layout: function () { this.beforeEach(); },
     /**
@@ -88,31 +90,42 @@ Suit.Router = Backbone.Router.extend(/** @lends Suit.Router.prototype */{
         }
         return result.length > 1 ? result.slice(0, -1) : result;
     },
+    getCallback: function (name) {
+        var routerName = this.className,
+            controller = App.Controllers[routerName],
+            scope = this,
+            callback = this[name];
+
+        if (controller && !callback) {
+            callback = controller[name];
+            scope = controller;
+        }
+
+        return _.bind(callback, scope);
+    },
     /**
       * Override the route function so that a controller get's called on calls after the application is first loaded.
       * @param {String} route string for the current route being called.
       * @param {String} name string with the name of the function to be called.
       * @param {Function} callback function that get's called if the route is matched.
       */
-    route: function (route, name, callback) {
+    route: function (route, name) {
         var router = this;
 
         var routerName = router.className,
-            controller = App.Controllers[routerName],
-            scope = router;
-
-        callback = callback || router[name];
-        if (controller) {
-            callback = controller[name];
-            scope = controller;
-        }
+            controller = App.Controllers[routerName];
 
         var f = function () {
 
             var goToRoute = function (args) {
                 if (router.layout) { router.layout.apply(router, args); }
-                callback = callback || router[name];
-                callback.apply(scope, args);
+                var before = router.before[name];
+                if (before) {
+                    _.each(before, function (funcName) {
+                        router.getCallback(funcName).apply(null, args);
+                    });
+                }
+                router.getCallback(name).apply(null, args);
                 if (router.afterEach) { router.afterEach.apply(router, args); }
             };
             var routeStripper = /^[#\/]|\s+$/g;

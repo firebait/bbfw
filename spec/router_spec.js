@@ -35,18 +35,25 @@ describe('Suit Router', function () {
             className: 'Other',
             routes: {
                 'other-page': 'otherPage',
+                'before-filter': 'beforeFilter'
             },
             beforeAll: function () {},
             afterAll: function () {},
             beforeEach: function () {},
-            afterEach: function () {}
+            afterEach: function () {},
+            beforeFunc1: function () {},
+            beforeFunc2: function () {},
+            before: {
+                'beforeFilter': ['beforeFunc1', 'beforeFunc2']
+            }
         });
         var OtherController = Suit.Controller.extend({
             initialize: function (options) {
                 Suit.Controller.prototype.initialize.apply(this, [options]);
             },
             className: 'Other',
-            otherPage: function () {}
+            otherPage: function () {},
+            beforeFilter: function () {}
 
         });
         App.Controllers.Other = new OtherController();
@@ -158,6 +165,30 @@ describe('Suit Router', function () {
             Backbone.history.navigate('#/other-page', { trigger: true });
             expect(spy[2].calledOnce).toEqual(true);
             expect(spy[3].calledOnce).toEqual(true);
+
+            _.each(spy, function (s) {
+                s.restore();
+            });
+            spy = null;
+        });
+
+        it('should call the layout function and the before function array when it changes router or first load', function () {
+            spy = [];
+            router = new App.Routers.Main();
+            var otherRouter = new App.Routers.Other();
+            spy.push(sinon.spy(otherRouter, 'beforeFunc1'));
+            spy.push(sinon.spy(otherRouter, 'beforeFunc2'));
+            spy.push(sinon.spy(App.Controllers.Other, 'beforeFilter'));
+
+            Backbone.history.navigate('#/page-one', { trigger: true });
+            expect(spy[0].calledOnce).toEqual(false);
+            expect(spy[1].calledOnce).toEqual(false);
+            expect(spy[2].calledOnce).toEqual(false);
+
+            Backbone.history.navigate('#/before-filter', { trigger: true });
+            expect(spy[0].calledOnce).toEqual(true);
+            expect(spy[1].calledOnce).toEqual(true);
+            expect(spy[2].calledOnce).toEqual(true);
 
             _.each(spy, function (s) {
                 s.restore();
