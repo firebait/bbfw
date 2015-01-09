@@ -19,9 +19,6 @@ Suit.Components.Binders.view = {
 
         if (_.isUndefined(Root)) { throw view + ' does not exist.'; }
 
-        $el.removeAttr('data-name');
-        delete data.name;
-
         attr = {el: el};
         _.each(data, function (value, key) {
             var keypath = value.split(':'),
