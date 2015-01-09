@@ -5,7 +5,7 @@ describe('Suit Table Component', function () {
     var collection, view, spy, el, html, tableComponent, model, testDiv;
 
     it('should throw an error with an invalid collection', function () {
-        html = '<div><span></span><table id="itemsCollection" suit-component-table data data-table-collection="collection" data-table-sort="id">';
+        html = '<div><span></span><table id="itemsCollection" suit-component-table data data-collection="collection" data-sort="id">';
         html += '<thead>';
         html += '<th><a href="#table/index" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
         html += '<th><a href="#table/index?foo=bar" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
@@ -43,13 +43,13 @@ describe('Suit Table Component', function () {
         view = new Suit.View({el: el, collection: model});
 
 
-        expect(view.render).toThrow(new Error('data-table-collection must be an instance of Suit.Collection'));
+        expect(view.render).toThrow(new Error('data-collection must be an instance of Suit.Collection'));
     });
 
     describe('without infinite scroll', function () {
 
         beforeEach(function () {
-            html = '<div><span></span><table id="itemsCollection" suit-component-table data data-table-collection="collection" data-table-sort="id">';
+            html = '<div><span></span><table id="itemsCollection" suit-component-table data data-collection="collection" data-sort="id">';
             html += '<thead>';
             html += '<th><a href="#table/index" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
             html += '<th><a href="#table/index?foo=bar" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
@@ -115,7 +115,7 @@ describe('Suit Table Component', function () {
             });
 
             it('should render the model:collection directly, with all the correct elements', function () {
-                view = new Suit.View({el: $(html.replace('data-table-collection="collection"', 'data-table-collection="model:items"'))[0], model: model});
+                view = new Suit.View({el: $(html.replace('data-collection="collection"', 'data-collection="model:items"'))[0], model: model});
                 view.render();
                 // Rows are correct
                 expect(tableComponent.find('tbody').children().length).toBe(2);
@@ -161,7 +161,7 @@ describe('Suit Table Component', function () {
 
     describe('with infinite scroll', function () {
         beforeEach(function () {
-            html = '<div><span></span><table id="itemsCollection" suit-component-table data-table-infinite-scroll data-table-collection="collection" data-table-sort="id">';
+            html = '<div><span></span><table id="itemsCollection" suit-component-table data-infinite-scroll data-collection="collection" data-sort="id">';
             html += '<thead>';
             html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
             html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
@@ -227,7 +227,7 @@ describe('Suit Table Component', function () {
             });
 
             it('should render the model:collection directly, with all the correct elements', function () {
-                view = new Suit.View({el: $(html.replace('data-table-collection="collection"', 'data-table-collection="model:items"'))[0], model: model});
+                view = new Suit.View({el: $(html.replace('data-collection="collection"', 'data-collection="model:items"'))[0], model: model});
                 view.render();
                 // Rows are correct
                 expect(tableComponent.find('tbody').children().length).toBe(2);
@@ -276,7 +276,7 @@ describe('Suit Table Component', function () {
                 testDiv = $('<div id="container-' + jasmine.getEnv().currentSpec.id + '"></div>');
                 $('body').append(testDiv);
 
-                html = '<div><span></span><table id="itemsCollection" height="500" suit-component-table data-table-infinite-scroll data-table-collection="collection" data-table-sort="id">';
+                html = '<div><span></span><table id="itemsCollection" height="500" suit-component-table data-infinite-scroll data-collection="collection" data-sort="id">';
                 html += '<thead>';
                 html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
                 html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
@@ -380,7 +380,7 @@ describe('Suit Table Component', function () {
                 testDiv = $('<div id="container-' + jasmine.getEnv().currentSpec.id + '"></div>');
                 $('body').append(testDiv);
 
-                html = '<div><span></span><table id="itemsCollection" suit-component-table data-table-infinite-scroll data-table-collection="collection" data-table-sort="id">';
+                html = '<div><span></span><table id="itemsCollection" suit-component-table data-infinite-scroll data-collection="collection" data-sort="id">';
                 html += '<thead>';
                 html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
                 html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
@@ -483,7 +483,7 @@ describe('Suit Table Component', function () {
                     testDiv = $('<div id="container-' + jasmine.getEnv().currentSpec.id + '"></div>');
                     $('body').append(testDiv);
 
-                    html = '<div><span></span><table id="itemsCollection" suit-component-table data-table-infinite-scroll data-table-sticky-headers data-table-collection="collection" data-table-sort="id">';
+                    html = '<div><span></span><table id="itemsCollection" suit-component-table data-infinite-scroll data-sticky-headers data-collection="collection" data-sort="id">';
                     html += '<thead>';
                     html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
                     html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
