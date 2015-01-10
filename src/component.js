@@ -3,7 +3,7 @@ Suit.Components = Suit.Components || {};
 Suit.Components.Binders = Suit.Components.Binders || {};
 
 /** List of registered components for the Suit framework */
-Suit.Components.registeredComponents = [];
+Suit.Components.registeredComponents = Suit.Components.registeredComponents || [];
 
 /** Here you will register a component using the class name of the top element. */
 Suit.Components.registerComponent = function (className) {
@@ -19,23 +19,23 @@ Suit.Components.Binders['component-*'] = {
             id = $el.attr('id'),
             componentName = _.str.camelize(_.str.underscored(this.args[0])),
             className = _.str.classify(_.str.underscored(componentName)),
-            data = {},
+            data = $el.data(),
             self = this,
-            attr;
-        _.each($el.data(), function (value, key) {
-            if (_.str.startsWith(key, componentName)) {
-                data[key] = value;
-            }
-        });
-        attr = {el: this.el};
+            attr = {el: this.el};
         _.each(data, function (value, key) {
-            var keypath = value.split(':'),
-                rootModel = self.view.models[keypath.shift()],
-                model = rootModel;
-            if (rootModel && keypath.length > 0) {
-                model = self.view.adapters[':'].read(rootModel, keypath.join(':'));
+            var attrKey = key;
+            if (_.isString(value)) {
+                var keypath = value.split(':'),
+                    keyName = keypath.shift(),
+                    rootModel = self.view.models[keyName] || self.view.models.options[keyName],
+                    model = rootModel;
+                if (rootModel && keypath.length > 0) {
+                    model = self.view.adapters[':'].read(rootModel, keypath.join(':'));
+                }
+                attr[attrKey] = model || value;
+            } else {
+                attr[attrKey] = value;
             }
-            attr[_.str.camelize(_.str.underscored(key.replace(componentName, '')))] = model || value;
         });
         this.componentView = new Suit.Components[className](attr);
         $el.removeAttr('suit-component-' + componentName);
