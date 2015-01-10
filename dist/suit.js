@@ -234,6 +234,10 @@ Suit.Helpers.Formatters = _.extend(_.str, {
         return String(value).replace(search, replace);
     },
 
+    remove: function (value, search) {
+        return String(value).replace(search, '');
+    },
+
     convertApiURL: function (value) {
         value = String(value).split('/api/');
         value = value.length > 1 ? value[value.length - 1] : false;

@@ -208,6 +208,16 @@ describe('Suit.Helpers.Formatters', function () {
             var result = formatters.replace('hello world', 'world', 'all');
             expect(result).toEqual('hello all');
         });
+
+    });
+
+    describe('remove', function () {
+
+        it('should remove text', function () {
+            var result = formatters.remove('hello world', ' world');
+            expect(result).toEqual('hello');
+        });
+
     });
 
     describe('convertApiURL', function () {
