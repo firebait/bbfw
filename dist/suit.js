@@ -1998,10 +1998,6 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         lightestGrey: [247, 247, 247]
     },
 
-    events: {
-        'click [data-legend] [data-toggle-series]': 'toggleChartSeries'
-    },
-
     initialize: function (options) {
         Suit.Component.prototype.initialize.apply(this, [options]);
         this.baseColor               = this.options.baseColor || 'blue';
@@ -2043,16 +2039,54 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     beforeClose: function () {
+        if (this.legend) {
+            this.legend.off('click');
+        }
     },
 
     afterRender: function () {
         this.$container = this.$el.find('[data-chart]');
-        if (!this.$container) {
+        if (!this.$container || this.$container.length < 1) {
             this.$container = $('<div class="chart-container"></div>');
             this.$el.append(this.$container);
         }
         this.$container.addClass('chart-theme-' + this.theme);
         this.renderChart();
+        this.activateLegend();
+
+    },
+
+    activateLegend: function () {
+        this.legend = $('body [data-legend-for="' + this.$el.attr('id') + '"]');
+        this.legend.on('click', '[data-toggle-series]', _.bind(this.toggleChartSeries, this));
+        this.legend.on('click', '[data-switch-series]', _.bind(this.switchChartSeries, this));
+    },
+
+    switchChartSeries: function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var target = $(e.target),
+            state = this.chart.state(),
+            index = this.findSeriesIndexByKey(target.data('switchSeries'));
+        state.disabled = _.map(state.disabled, function (value, key) {
+            if (key === index) {
+                return false;
+            }
+            return true;
+        });
+        this.chart.dispatch.changeState(state);
+        this.chart.update();
+
+    },
+
+    findSeriesIndexByKey: function (key) {
+        var result;
+        _.each(this.data, function (series, index) {
+            if (series.key === key) {
+                result = index;
+            }
+        });
+        return result;
     },
 
     toggleChartSeries: function (e) {
@@ -2060,14 +2094,14 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         e.stopPropagation();
         var target = $(e.target),
             state = this.chart.state(),
-            index = target.data('toggleSeries'),
+            index = this.findSeriesIndexByKey(target.data('toggleSeries')),
             stateCount;
         target.toggleClass('disabled');
         state.disabled[index] = target.hasClass('disabled');
         stateCount = _.countBy(state.disabled, function (bool) { return bool ? 'true': 'false'; });
 
         if (!stateCount.false) {
-            this.find('[data-legend] [data-toggle-series]').removeClass('disabled');
+            this.legend.find('[data-toggle-series]').removeClass('disabled');
             state.disabled = _.map(state.disabled, function () { return false; });
         }
         this.chart.dispatch.changeState(state);
