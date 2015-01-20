@@ -2109,8 +2109,27 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     chartData: function (source) {
-        var results = {},
+        var results,
             self = this;
+
+
+
+        if (this.chartType === 'pie') {
+            results = [];
+            if (source instanceof Suit.Model) {
+                for (var sourceKey in source.attributes) {
+                    results.push({label: sourceKey, value: source.get(sourceKey)});
+                }
+            } else if (source.constructor === Object) {
+                for (var sobjKey in source) {
+                    results.push({label: sobjKey, value: source[sobjKey]});
+                }
+            }
+            return results;
+        }
+
+        results = {};
+
         if (source instanceof Suit.Collection) {
             source = source.models;
         }
@@ -2149,47 +2168,69 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.data = this.chartData(this.source);
         this.color = this.color || this.generateColors();
         var chart,
-            minMax = this._minMaxValues(this.data);
+            minMax;
         if (this.chartType === 'line') {
+            minMax = this._minMaxValues(this.data);
             chart = nv.models.lineChart();
             chart.useInteractiveGuideline(this.useInteractiveGuideline)
+            .rightAlignYAxis(this.rightAlignYAxis)
+            .showYAxis(this.showYAxis)
+            .showXAxis(this.showXAxis)
             .showLegend(this.showLegend);
             chart.xAxis.tickValues(_.bind(this.xTicks, this));
         } else if (this.chartType === 'stackedarea') {
+            minMax = this._minMaxValues(this.data);
             chart = nv.models.stackedAreaChart();
             chart.useInteractiveGuideline(this.useInteractiveGuideline)
-            .showLegend(this.showLegend)
-            .showControls(this.showControls);
+                .rightAlignYAxis(this.rightAlignYAxis)
+                .showYAxis(this.showYAxis)
+                .showXAxis(this.showXAxis)
+                .showLegend(this.showLegend)
+                .showControls(this.showControls)
+                .rightAlignYAxis(this.rightAlignYAxis);
             chart.xAxis.tickValues(_.bind(this.xTicks, this));
         } else if (this.chartType === 'bar') {
+            minMax = this._minMaxValues(this.data);
             chart = nv.models.discreteBarChart();
+            chart.rightAlignYAxis(this.rightAlignYAxis)
+                .showYAxis(this.showYAxis)
+                .showXAxis(this.showXAxis);
+        } else if (this.chartType === 'pie') {
+            chart = nv.models.pieChart()
+                    .x(function (d) { return d.label; })
+                    .y(function (d) { return d.value; })
+                    .showLabels(this.showLabels)
+                    .labelThreshold(0.01)
+                    .labelType(this.labelType)
+                    .donut(this.donut)
+                    .donutRatio(this.donutRatio)
+                    .showLegend(this.showLegend);
         }
         chart.margin(this.margin)
-            .rightAlignYAxis(this.rightAlignYAxis)
             .color(this.color)
             .height(this.$el.height())
             .width(this.$el.width())
-            .showYAxis(this.showYAxis)
-            .showXAxis(this.showXAxis)
             .tooltips(this.tooltips);
 
-        // X and Y axis information
-        chart.xAxis
-            .axisLabel(this.xAxisLabel)
-            .tickFormat(this.getFormatter(this.xAxisFormat));
+        if (this.chartType !== 'pie') {
+            // X and Y axis information
+            chart.xAxis
+                .axisLabel(this.xAxisLabel)
+                .tickFormat(this.getFormatter(this.xAxisFormat));
 
-        chart.yAxis
-            .axisLabel(this.yAxisLabel)
-            .tickFormat(this.getFormatter(this.yAxisFormat));
+            chart.yAxis
+                .axisLabel(this.yAxisLabel)
+                .tickFormat(this.getFormatter(this.yAxisFormat));
 
 
-        // Set min/max values for Axis
-        if (this.minY !== 'auto' && this.maxY !== 'auto') {
-            chart.forceY([this.minY, this.maxY]);
-        } else if (this.minY !== 'auto') {
-            chart.forceY([this.minY, minMax.y.max]);
-        } else if (this.maxY !== 'auto') {
-            chart.forceY([minMax.y.min, this.maxY]);
+            // Set min/max values for Axis
+            if (this.minY !== 'auto' && this.maxY !== 'auto') {
+                chart.forceY([this.minY, this.maxY]);
+            } else if (this.minY !== 'auto') {
+                chart.forceY([this.minY, minMax.y.max]);
+            } else if (this.maxY !== 'auto') {
+                chart.forceY([minMax.y.min, this.maxY]);
+            }
         }
 
         // // Sets the data
