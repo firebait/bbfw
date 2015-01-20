@@ -43,7 +43,7 @@ Backbone.sync = function (method, model, options) {
     }
 
     if (_.isUndefined(model.remoteStorage) || model.remoteStorage === true) {
-        backBoneSync(method, model, options);
+        return backBoneSync(method, model, options);
     }
 
 };
