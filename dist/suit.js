@@ -2323,7 +2323,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
                 ];
             }
         } else {
-            var length = this.data.length;
+            var length = this.data.length || 4;
 
             if (this.type === 'bargraph' && this.data && this.data[0].values) {
                 length = this.data[0].values.length;
@@ -2384,6 +2384,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
 });
 
 Suit.Components.registerComponent('Chart');
+
 'use strict';
 
 if (!_.has(Suit, 'Components')) {
