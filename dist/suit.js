@@ -2062,7 +2062,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     activateLegend: function () {
         this.legend = $('body [data-legend-for="' + this.$el.attr('id') + '"]');
-        if (this.legend.length > 0) {
+        if (this.legend && this.legend.length > 0) {
             this.legend.on('click', '[data-toggle-series]', _.bind(this.toggleChartSeries, this));
             this.legend.on('click', '[data-switch-series]', _.bind(this.switchChartSeries, this));
         }
@@ -2189,6 +2189,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             chart.showLegend(this.showLegend);
         } else if (this.chartType === 'bar') {
             chart = nv.models.discreteBarChart();
+            chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
         }
 
         if (this.isPie) {
