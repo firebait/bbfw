@@ -47,10 +47,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.baseColor               = this.options.baseColor || 'blue';
         this.theme                   = this.options.theme || 'dark';
         this.chartType               = this.options.chartType || 'line';
-        this.margin                  = {left: this.options.marginLeft || 50,
-                                        right: this.options.marginRight || 0,
-                                        top: this.options.marginTop || 40,
-                                        bottom: this.options.marginBottom || 40};
+        this.margin                  = {left: _.isUndefined(this.options.marginLeft) ? 50 : this.options.marginLeft,
+                                        right: _.isUndefined(this.options.marginRight) ? 0 : this.options.marginRight,
+                                        top: _.isUndefined(this.options.marginTop) ? 40 : this.options.marginTop,
+                                        bottom: _.isUndefined(this.options.marginBottom) ? 40 : this.options.marginBottom };
         this.hasAverage              = this.options.hasAverage || false;
         this.staggerLabels           = this.options.staggerLabels || false;
         this.transitionDuration      = this.options.transitionDuration || 350;
@@ -77,7 +77,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.source                  = this.options.source || [];
         this.data                    = [];
         if (this.source instanceof Suit.Collection) {
-            this.listenTo(this.source, 'reset', this.renderChart);
+            this.listenTo(this.source, 'reset remove change', this.renderChart);
             this.listenTo(this.source, 'add', this.updateChart);
         }
     },
@@ -89,6 +89,8 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     afterRender: function () {
+        this.isPie = (this.chartType === 'pie') ? true : false;
+
         this.$container = this.$el.find('[data-chart]');
         if (!this.$container || this.$container.length < 1) {
             this.$container = $('<div class="chart-container"></div>');
@@ -102,8 +104,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     activateLegend: function () {
         this.legend = $('body [data-legend-for="' + this.$el.attr('id') + '"]');
-        this.legend.on('click', '[data-toggle-series]', _.bind(this.toggleChartSeries, this));
-        this.legend.on('click', '[data-switch-series]', _.bind(this.switchChartSeries, this));
+        if (this.legend.length > 0) {
+            this.legend.on('click', '[data-toggle-series]', _.bind(this.toggleChartSeries, this));
+            this.legend.on('click', '[data-switch-series]', _.bind(this.switchChartSeries, this));
+        }
     },
 
     switchChartSeries: function (e) {
@@ -125,8 +129,9 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     findSeriesIndexByKey: function (key) {
         var result;
+        var keyVal = this.isPie ? 'label' : 'key';
         _.each(this.data, function (series, index) {
-            if (series.key === key) {
+            if (series[keyVal] === key) {
                 result = index;
             }
         });
@@ -156,9 +161,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         var results,
             self = this;
 
-
-
-        if (this.chartType === 'pie') {
+        if (this.isPie) {
             results = [];
             if (source instanceof Suit.Model) {
                 for (var sourceKey in source.attributes) {
@@ -213,33 +216,24 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.color = this.color || this.generateColors();
         var chart,
             minMax;
+
         if (this.chartType === 'line') {
-            minMax = this._minMaxValues(this.data);
             chart = nv.models.lineChart();
-            chart.useInteractiveGuideline(this.useInteractiveGuideline)
-            .rightAlignYAxis(this.rightAlignYAxis)
-            .showYAxis(this.showYAxis)
-            .showXAxis(this.showXAxis)
-            .showLegend(this.showLegend);
+            chart.useInteractiveGuideline(this.useInteractiveGuideline).rightAlignYAxis(this.rightAlignYAxis);
+            chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
             chart.xAxis.tickValues(_.bind(this.xTicks, this));
+            chart.showLegend(this.showLegend);
         } else if (this.chartType === 'stackedarea') {
-            minMax = this._minMaxValues(this.data);
             chart = nv.models.stackedAreaChart();
-            chart.useInteractiveGuideline(this.useInteractiveGuideline)
-                .rightAlignYAxis(this.rightAlignYAxis)
-                .showYAxis(this.showYAxis)
-                .showXAxis(this.showXAxis)
-                .showLegend(this.showLegend)
-                .showControls(this.showControls)
-                .rightAlignYAxis(this.rightAlignYAxis);
+            chart.useInteractiveGuideline(this.useInteractiveGuideline).rightAlignYAxis(this.rightAlignYAxis);
+            chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
             chart.xAxis.tickValues(_.bind(this.xTicks, this));
+            chart.showLegend(this.showLegend);
         } else if (this.chartType === 'bar') {
-            minMax = this._minMaxValues(this.data);
             chart = nv.models.discreteBarChart();
-            chart.rightAlignYAxis(this.rightAlignYAxis)
-                .showYAxis(this.showYAxis)
-                .showXAxis(this.showXAxis);
-        } else if (this.chartType === 'pie') {
+        }
+
+        if (this.isPie) {
             chart = nv.models.pieChart()
                     .x(function (d) { return d.label; })
                     .y(function (d) { return d.value; })
@@ -249,17 +243,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
                     .donut(this.donut)
                     .donutRatio(this.donutRatio)
                     .showLegend(this.showLegend);
-        }
-        chart.margin(this.margin)
-            .color(this.color)
-            .height(this.$el.height())
-            .width(this.$el.width())
-            .tooltips(this.tooltips);
-
-        if (this.chartType !== 'pie') {
+        } else {
+            minMax = this._minMaxValues(this.data);
             // X and Y axis information
-            chart.xAxis
-                .axisLabel(this.xAxisLabel)
+            chart.xAxis.axisLabel(this.xAxisLabel)
                 .tickFormat(this.getFormatter(this.xAxisFormat));
 
             chart.yAxis
@@ -277,8 +264,11 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             }
         }
 
-        // // Sets the data
-        // var chartData = this.data;
+        chart.margin(this.margin)
+            .color(this.color)
+            .height(this.$el.height())
+            .width(this.$el.width())
+            .tooltips(this.tooltips);
 
         // Draw the chart
         this.$container.height(this.$el.height()).empty();
@@ -294,13 +284,13 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             svg.selectAll('circle').remove();
         }
 
-        // nv.addGraph(function () { return chart; });
-        // return chart;
         this.svg = svg;
         this.chart = chart;
-        var m = svg.selectAll('.nv-x .nv-axisMaxMin')[0];
-        $(m[0]).css({transform: 'translate(45px, 0)'});
-        $(m[1]).css({transform: 'translate(' + (this.$el.width() - (this.margin.left + 50)) + 'px, 0)'});
+        if (!this.isPie) {
+            var m = svg.selectAll('.nv-x .nv-axisMaxMin')[0];
+            $(m[0]).css({transform: 'translate(45px, 0)'});
+            $(m[1]).css({transform: 'translate(' + (this.$el.width() - (this.margin.left + 50)) + 'px, 0)'});
+        }
         return this.chart;
     },
 
@@ -355,7 +345,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         // if is wdiget (label distribution charts) we need 100% and 0% only
         // if not, then we have to make it look like gradient
         if (this.isWidget) {
-            if (this.type === 'stacked-areagraph' || this.type === 'areagraph') {
+            if (this.chartType === 'stackedareagraph' || this.chartType === 'areagraph') {
                 colors = [
                     '#e0e0e0',
                     this.generateColor(baseColor, 1)
