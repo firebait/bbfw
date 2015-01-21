@@ -77,8 +77,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.source                  = this.options.source || [];
         this.data                    = [];
         if (this.source instanceof Suit.Collection) {
-            this.listenTo(this.source, 'reset remove change', this.renderChart);
+            this.listenTo(this.source, 'reset remove', this.renderChart);
             this.listenTo(this.source, 'add', this.updateChart);
+        } else if (this.source instanceof Suit.Model) {
+            this.listenTo(this.source, 'change', this.renderChart);
         }
     },
 
