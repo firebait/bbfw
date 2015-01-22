@@ -71,7 +71,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.showControls            = this.options.showControls || false;
         this.minY                    = this.options.minY || 0;
         this.maxY                    = this.options.maxY || 'auto';
-        this.interactive             = this.options.interactive || true;
+        this.interactive             = _.isUndefined(this.options.interactive) ? true : this.options.interactive;
         this.rightAlignYAxis         = this.options.rightAlignYAxis || false;
         this.xAttr                   = this.options.xAttr || 'timestamp';
         this.source                  = this.options.source || [];
@@ -345,37 +345,21 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         var baseColor = this.colorsMap[this.baseColor];
         var opacityBase = 1;
 
-        // if is wdiget (label distribution charts) we need 100% and 0% only
-        // if not, then we have to make it look like gradient
-        if (this.isWidget) {
-            if (this.chartType === 'stackedareagraph' || this.chartType === 'areagraph') {
-                colors = [
-                    '#e0e0e0',
-                    this.generateColor(baseColor, 1)
-                ];
-            } else {
-                colors = [
-                    this.generateColor(baseColor, 1),
-                    this.generateColor(this.colorsMap.lightestGrey, 1)
-                ];
-            }
-        } else {
-            var length = this.data.length || 4;
+        var length = this.data.length || 4;
 
-            if (this.type === 'bargraph' && this.data && this.data[0].values) {
-                length = this.data[0].values.length;
-            } else if (this.type === 'bulletgraph' && this.data && this.data.measures) {
-                length = this.data.measures.length;
-            }
+        if (this.type === 'bargraph' && this.data && this.data[0].values) {
+            length = this.data[0].values.length;
+        } else if (this.type === 'bulletgraph' && this.data && this.data.measures) {
+            length = this.data.measures.length;
+        }
 
-            if (this.options.hasAverage) {
-                length = length - 1;
-            }
+        if (this.options.hasAverage) {
+            length = length - 1;
+        }
 
-            for (var i = 0; i < length; i++) {
-                colors.push(this.generateColor(baseColor, opacityBase));
-                opacityBase = opacityBase - 0.2;
-            }
+        for (var i = 0; i < length; i++) {
+            colors.push(this.generateColor(baseColor, opacityBase));
+            opacityBase = opacityBase - 0.2;
         }
 
         if (this.options.hasAverage) {
