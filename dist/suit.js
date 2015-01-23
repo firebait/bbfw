@@ -2981,6 +2981,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
         this.$tbody.find('tr').first().attr('suit-each-row', keypath);
         this.listenTo(this.collection, 'sort', this._updateHeaders);
+        this.listenTo(this.collection, 'sync', this._adjustHeaderSize);
         if (_.has(this.options, 'infiniteScroll')) {
             this._setupInfiniteScroll();
         }
@@ -2994,15 +2995,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     afterRender: function () {
         if (_.has(this.options, 'infiniteScroll')) {
-            var children = this.$newThead.find('tr').first().children(),
-                $th, w;
-            this.$thead.find('tr').first().children().each(function (index, th) {
-                $th = $(th);
-                w = $th.width();
-                if (w > 0) {
-                    children.eq(index).width();
-                }
-            });
+            this._adjustHeaderSize();
         }
         this.collection.sort();
     },
@@ -3079,6 +3072,18 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         } else {
             this.$window.off('scroll', this.__windowScrolled);
         }
+    },
+
+    _adjustHeaderSize: function () {
+        var children = this.$newThead.find('tr').first().children(),
+            $th, w;
+        this.$thead.find('tr').first().children().each(function (index, th) {
+            $th = $(th);
+            w = $th.width();
+            if (w > 0) {
+                children.eq(index).width(w);
+            }
+        });
     },
 
     /* Hides loader that was shows during a table:next event */
