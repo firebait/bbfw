@@ -3075,6 +3075,9 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     _adjustHeaderSize: function () {
+        if (!this.$newThead || this.$newThead.length < 1) {
+            return;
+        }
         var children = this.$newThead.find('tr').first().children(),
             $th, w;
         this.$thead.find('tr').first().children().each(function (index, th) {
