@@ -2876,6 +2876,9 @@ Suit.Components.Slider = Suit.Component.extend(/** @lends Suit.Components.Slider
       */
     initialize: function () {
         Suit.Component.prototype.initialize.apply(this, this.options);
+    },
+
+    afterRender: function () {
         // Let's initialize all components and hook up all the events.
         var el = this.$el;
 
@@ -2902,6 +2905,7 @@ Suit.Components.Slider = Suit.Component.extend(/** @lends Suit.Components.Slider
         };
         this.slider = new Dragdealer(this.cid, args);
     },
+
     callback: function (x, y) {
         var view = $(this.wrapper).data('view');
         view.trigger('change', x, y);
