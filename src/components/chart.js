@@ -47,10 +47,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.baseColor               = this.options.baseColor || 'blue';
         this.theme                   = this.options.theme || 'dark';
         this.chartType               = this.options.chartType || 'line';
-        this.margin                  = {left: this.options.marginLeft || 50,
-                                        right: this.options.marginRight || 0,
-                                        top: this.options.marginTop || 40,
-                                        bottom: this.options.marginBottom || 40};
+        this.margin                  = {left: _.isUndefined(this.options.marginLeft) ? 50 : this.options.marginLeft,
+                                        right: _.isUndefined(this.options.marginRight) ? 0 : this.options.marginRight,
+                                        top: _.isUndefined(this.options.marginTop) ? 40 : this.options.marginTop,
+                                        bottom: _.isUndefined(this.options.marginBottom) ? 40 : this.options.marginBottom };
         this.hasAverage              = this.options.hasAverage || false;
         this.staggerLabels           = this.options.staggerLabels || false;
         this.transitionDuration      = this.options.transitionDuration || 350;
@@ -71,14 +71,16 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.showControls            = this.options.showControls || false;
         this.minY                    = this.options.minY || 0;
         this.maxY                    = this.options.maxY || 'auto';
-        this.interactive             = this.options.interactive || true;
+        this.interactive             = _.isUndefined(this.options.interactive) ? true : this.options.interactive;
         this.rightAlignYAxis         = this.options.rightAlignYAxis || false;
         this.xAttr                   = this.options.xAttr || 'timestamp';
         this.source                  = this.options.source || [];
         this.data                    = [];
         if (this.source instanceof Suit.Collection) {
-            this.listenTo(this.source, 'reset', this.renderChart);
+            this.listenTo(this.source, 'reset remove', this.renderChart);
             this.listenTo(this.source, 'add', this.updateChart);
+        } else if (this.source instanceof Suit.Model) {
+            this.listenTo(this.source, 'change', this.renderChart);
         }
     },
 
@@ -89,6 +91,8 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     afterRender: function () {
+        this.isPie = (this.chartType === 'pie') ? true : false;
+
         this.$container = this.$el.find('[data-chart]');
         if (!this.$container || this.$container.length < 1) {
             this.$container = $('<div class="chart-container"></div>');
@@ -102,8 +106,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     activateLegend: function () {
         this.legend = $('body [data-legend-for="' + this.$el.attr('id') + '"]');
-        this.legend.on('click', '[data-toggle-series]', _.bind(this.toggleChartSeries, this));
-        this.legend.on('click', '[data-switch-series]', _.bind(this.switchChartSeries, this));
+        if (this.legend && this.legend.length > 0) {
+            this.legend.on('click', '[data-toggle-series]', _.bind(this.toggleChartSeries, this));
+            this.legend.on('click', '[data-switch-series]', _.bind(this.switchChartSeries, this));
+        }
     },
 
     switchChartSeries: function (e) {
@@ -125,8 +131,9 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     findSeriesIndexByKey: function (key) {
         var result;
+        var keyVal = this.isPie ? 'label' : 'key';
         _.each(this.data, function (series, index) {
-            if (series.key === key) {
+            if (series[keyVal] === key) {
                 result = index;
             }
         });
@@ -153,8 +160,25 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     chartData: function (source) {
-        var results = {},
+        var results,
             self = this;
+
+        if (this.isPie) {
+            results = [];
+            if (source instanceof Suit.Model) {
+                for (var sourceKey in source.attributes) {
+                    results.push({label: sourceKey, value: source.get(sourceKey)});
+                }
+            } else if (source.constructor === Object) {
+                for (var sobjKey in source) {
+                    results.push({label: sobjKey, value: source[sobjKey]});
+                }
+            }
+            return results;
+        }
+
+        results = {};
+
         if (source instanceof Suit.Collection) {
             source = source.models;
         }
@@ -193,51 +217,61 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.data = this.chartData(this.source);
         this.color = this.color || this.generateColors();
         var chart,
-            minMax = this._minMaxValues(this.data);
+            minMax;
+
         if (this.chartType === 'line') {
             chart = nv.models.lineChart();
-            chart.useInteractiveGuideline(this.useInteractiveGuideline)
-            .showLegend(this.showLegend);
+            chart.useInteractiveGuideline(this.useInteractiveGuideline).rightAlignYAxis(this.rightAlignYAxis);
+            chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
             chart.xAxis.tickValues(_.bind(this.xTicks, this));
+            chart.showLegend(this.showLegend);
         } else if (this.chartType === 'stackedarea') {
             chart = nv.models.stackedAreaChart();
-            chart.useInteractiveGuideline(this.useInteractiveGuideline)
-            .showLegend(this.showLegend)
-            .showControls(this.showControls);
+            chart.useInteractiveGuideline(this.useInteractiveGuideline).rightAlignYAxis(this.rightAlignYAxis);
+            chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
             chart.xAxis.tickValues(_.bind(this.xTicks, this));
+            chart.showLegend(this.showLegend);
         } else if (this.chartType === 'bar') {
             chart = nv.models.discreteBarChart();
+            chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
         }
+
+        if (this.isPie) {
+            chart = nv.models.pieChart()
+                    .x(function (d) { return d.label; })
+                    .y(function (d) { return d.value; })
+                    .showLabels(this.showLabels)
+                    .labelThreshold(0.01)
+                    .labelType(this.labelType)
+                    .donut(this.donut)
+                    .donutRatio(this.donutRatio)
+                    .showLegend(this.showLegend);
+        } else {
+            minMax = this._minMaxValues(this.data);
+            // X and Y axis information
+            chart.xAxis.axisLabel(this.xAxisLabel)
+                .tickFormat(this.getFormatter(this.xAxisFormat));
+
+            chart.yAxis
+                .axisLabel(this.yAxisLabel)
+                .tickFormat(this.getFormatter(this.yAxisFormat));
+
+
+            // Set min/max values for Axis
+            if (this.minY !== 'auto' && this.maxY !== 'auto') {
+                chart.forceY([this.minY, this.maxY]);
+            } else if (this.minY !== 'auto') {
+                chart.forceY([this.minY, minMax.y.max]);
+            } else if (this.maxY !== 'auto') {
+                chart.forceY([minMax.y.min, this.maxY]);
+            }
+        }
+
         chart.margin(this.margin)
-            .rightAlignYAxis(this.rightAlignYAxis)
             .color(this.color)
             .height(this.$el.height())
             .width(this.$el.width())
-            .showYAxis(this.showYAxis)
-            .showXAxis(this.showXAxis)
             .tooltips(this.tooltips);
-
-        // X and Y axis information
-        chart.xAxis
-            .axisLabel(this.xAxisLabel)
-            .tickFormat(this.getFormatter(this.xAxisFormat));
-
-        chart.yAxis
-            .axisLabel(this.yAxisLabel)
-            .tickFormat(this.getFormatter(this.yAxisFormat));
-
-
-        // Set min/max values for Axis
-        if (this.minY !== 'auto' && this.maxY !== 'auto') {
-            chart.forceY([this.minY, this.maxY]);
-        } else if (this.minY !== 'auto') {
-            chart.forceY([this.minY, minMax.y.max]);
-        } else if (this.maxY !== 'auto') {
-            chart.forceY([minMax.y.min, this.maxY]);
-        }
-
-        // // Sets the data
-        // var chartData = this.data;
 
         // Draw the chart
         this.$container.height(this.$el.height()).empty();
@@ -253,13 +287,13 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             svg.selectAll('circle').remove();
         }
 
-        // nv.addGraph(function () { return chart; });
-        // return chart;
         this.svg = svg;
         this.chart = chart;
-        var m = svg.selectAll('.nv-x .nv-axisMaxMin')[0];
-        $(m[0]).css({transform: 'translate(45px, 0)'});
-        $(m[1]).css({transform: 'translate(' + (this.$el.width() - (this.margin.left + 50)) + 'px, 0)'});
+        if (!this.isPie) {
+            var m = svg.selectAll('.nv-x .nv-axisMaxMin')[0];
+            $(m[0]).css({transform: 'translate(45px, 0)'});
+            $(m[1]).css({transform: 'translate(' + (this.$el.width() - (this.margin.left + 50)) + 'px, 0)'});
+        }
         return this.chart;
     },
 
@@ -311,37 +345,21 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         var baseColor = this.colorsMap[this.baseColor];
         var opacityBase = 1;
 
-        // if is wdiget (label distribution charts) we need 100% and 0% only
-        // if not, then we have to make it look like gradient
-        if (this.isWidget) {
-            if (this.type === 'stacked-areagraph' || this.type === 'areagraph') {
-                colors = [
-                    '#e0e0e0',
-                    this.generateColor(baseColor, 1)
-                ];
-            } else {
-                colors = [
-                    this.generateColor(baseColor, 1),
-                    this.generateColor(this.colorsMap.lightestGrey, 1)
-                ];
-            }
-        } else {
-            var length = this.data.length || 4;
+        var length = this.data.length || 4;
 
-            if (this.type === 'bargraph' && this.data && this.data[0].values) {
-                length = this.data[0].values.length;
-            } else if (this.type === 'bulletgraph' && this.data && this.data.measures) {
-                length = this.data.measures.length;
-            }
+        if (this.type === 'bargraph' && this.data && this.data[0].values) {
+            length = this.data[0].values.length;
+        } else if (this.type === 'bulletgraph' && this.data && this.data.measures) {
+            length = this.data.measures.length;
+        }
 
-            if (this.options.hasAverage) {
-                length = length - 1;
-            }
+        if (this.options.hasAverage) {
+            length = length - 1;
+        }
 
-            for (var i = 0; i < length; i++) {
-                colors.push(this.generateColor(baseColor, opacityBase));
-                opacityBase = opacityBase - 0.2;
-            }
+        for (var i = 0; i < length; i++) {
+            colors.push(this.generateColor(baseColor, opacityBase));
+            opacityBase = opacityBase - 0.2;
         }
 
         if (this.options.hasAverage) {
