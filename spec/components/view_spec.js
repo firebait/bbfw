@@ -14,6 +14,7 @@ describe('Suit Component View', function () {
 			App.Views.Children.Child = Suit.View.extend({template: function () { return '<div id="model" suit-text="model:name"></div><div id="collection" suit-each-model="collection.models">{model:name}</div>'; }});
 			view = new Suit.View({model: model, collection: collection, el: '<div><div suit-view data-name="Children.Child" data-model="model" data-collection="collection"></div></div>'});
 			el = view.render().$el;
+			jasmine.Clock.tick(1);
 		});
 
 		it('should render the child view with the collection and model data', function () {

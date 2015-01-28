@@ -4154,7 +4154,10 @@ Suit.Components.Binders.view = {
         $el.removeAttr('suit-view');
         this.$view = new Root(attr);
         this.$view.setParent(this.view.models);
-        this.$view.render();
+        // We need to render after it binds.
+        _.defer(function () {
+            self.$view.render();
+        });
     },
 
     unbind: function () {
