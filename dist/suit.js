@@ -2876,9 +2876,6 @@ Suit.Components.Slider = Suit.Component.extend(/** @lends Suit.Components.Slider
       */
     initialize: function () {
         Suit.Component.prototype.initialize.apply(this, this.options);
-    },
-
-    afterRender: function () {
         // Let's initialize all components and hook up all the events.
         var el = this.$el;
 
