@@ -57,6 +57,8 @@ _.extend(Controller.prototype, Events, /** @lends Controller.prototype */{
                     // Check if the user can access.
                     if (Suit.Can.go(self.className, func)) {
                         return f.apply(self, Array.prototype.slice.call(arguments, 1));
+                    } else if (Suit.Can.authenticate()) {
+                        Backbone.history.navigate('/', true);
                     }
                 });
             }
