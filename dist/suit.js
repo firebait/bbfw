@@ -3041,6 +3041,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.$el.wrap(infiniteScrollWrapper);
 
         $table = $('<table/>');
+        $table.addClass(this.$el.attr('class'));
 
         this.$newThead = this.$thead.clone();
         this.$el.closest('.infinite-scroll').prepend(this.$newThead);
@@ -3187,7 +3188,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     }
 });
 
-Suit.Components.registerComponent('Table');
+// Suit.Components.registerComponent('Table');
 
 'use strict';
 
