@@ -161,7 +161,7 @@ describe('Suit Table Component', function () {
 
     describe('with infinite scroll', function () {
         beforeEach(function () {
-            html = '<div><span></span><table id="itemsCollection" suit-component-table data-infinite-scroll data-collection="collection" data-sort="id">';
+            html = '<div><span></span><table id="itemsCollection" class="blue" suit-component-table data-infinite-scroll data-collection="collection" data-sort="id">';
             html += '<thead>';
             html += '<th><a href="#table/index?test=var" class="sortable" data-sort-by="id" data-default-sort="asc">ID</a></th>';
             html += '<th><a href="#table/index" class="sortable" data-sort-by="name" data-default-sort="desc">Name</a></th>';
@@ -214,6 +214,10 @@ describe('Suit Table Component', function () {
                 expect(spy.calledOnce).toEqual(true);
                 spy.restore();
             });
+
+            it('should copy the class attribute to the new table wrapper', function () {
+                expect($(tableComponent.$el.parent().find('table').get(0)).hasClass('blue')).toBe(true);
+            });
         });
 
         describe('rendering the collection', function () {
@@ -222,8 +226,6 @@ describe('Suit Table Component', function () {
                 expect(tableComponent.find('tbody').children().length).toBe(2);
                 expect(tableComponent.find('tbody').children().first().text()).toBe('1Foo');
                 expect(tableComponent.find('tbody').children().last().text()).toBe('2Bar');
-
-
             });
 
             it('should render the model:collection directly, with all the correct elements', function () {

@@ -246,7 +246,7 @@ module.exports = function (grunt) {
         'jshint',
         'jasmine',
         'compile',
-        'jsdoc'
+        //'jsdoc'
     ]);
 
     grunt.registerTask('default', [
