@@ -3153,15 +3153,18 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
     _stickHeaders: function () {
         var table = this.$newThead.closest('table'),
             scrollTop = this.$window.scrollTop(),
-            thOffset = this.$newThead.offset().top;
+            thOffset = this.$newThead.offset().top,
+            infiniteScrollContainer = this.$el.find('.infinite-scroll-container');
         if (scrollTop > thOffset && !table.data('isStuck')) {
             table.data('isStuck', true);
             table.data('startingOffset', thOffset);
             table.css({position: 'fixed', 'z-index': 50, width: table.width(), top: 0});
+            infiniteScrollContainer.css({'margin-top': this.$newThead.height()});
         } else if (table.data('isStuck') === true && scrollTop < table.data('startingOffset')) {
             table.data('isStuck', false);
             table.data('startingOffset', false);
-            table.css({position: 'static'});
+            table.css({position: 'absolute'});
+            infiniteScrollContainer.css({'margin-top': 0});
         }
     },
 
@@ -3187,9 +3190,6 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.trigger('table:next', this.collection, _.bind(this._removeInfiniteLoader, this));
     }
 });
-
-// Suit.Components.registerComponent('Table');
-
 'use strict';
 
 if (!_.has(Suit, 'Components')) {
