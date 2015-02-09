@@ -195,11 +195,42 @@ describe('Suit Chart Component', function () {
             $('[data-toggle-series="t"]').trigger('click');
 
             expect(chartComponent.chart.state().disabled).toEqual([false, false, false]);
-
-
-
         });
 
+        it('should hide the controls when the parameter showControls is true', function () {
+            html = '<div id="testChart" suit-component-chart data-source="collection" data-show-controls="false" data-chart-type="stackedarea" data-source="collection" data-x-axis-format="datetime" data-theme="dark" data-tooltips="true"></div></div>';
+            el = $(html)[0];
+            collection = new Suit.Collection([
+                {timestamp: moment().add(0, 'days'), ctr: 1500, vcr: 1500, t: 1500},
+                {timestamp: moment().add(1, 'days'), ctr: 2500, vcr: 2500, t: 2500},
+                {timestamp: moment().add(2, 'days'), ctr: 4500, vcr: 4500, t: 4500},
+                {timestamp: moment().add(3, 'days'), ctr: 5000, vcr: 5000, t: 5000}
+            ]);
+
+            view = new Suit.View({el: el, collection: collection});
+            testDiv.append(view.el);
+            view.render();
+            el = view.$el;
+            expect(el.find('.nv-legend').length).toBe(0);
+        });
+
+
+        it('should show the controls when the parameter showControls is true', function () {
+            html = '<div id="testChart" suit-component-chart data-source="collection" data-show-controls="true" data-chart-type="stackedarea" data-source="collection" data-x-axis-format="datetime" data-theme="dark" data-tooltips="true"></div></div>';
+            el = $(html)[0];
+            collection = new Suit.Collection([
+                {timestamp: moment().add(0, 'days'), ctr: 1500, vcr: 1500, t: 1500},
+                {timestamp: moment().add(1, 'days'), ctr: 2500, vcr: 2500, t: 2500},
+                {timestamp: moment().add(2, 'days'), ctr: 4500, vcr: 4500, t: 4500},
+                {timestamp: moment().add(3, 'days'), ctr: 5000, vcr: 5000, t: 5000}
+            ]);
+
+            view = new Suit.View({el: el, collection: collection});
+            testDiv.append(view.el);
+            view.render();
+            el = view.$el;
+            expect(el.find('.nv-legend').length).toBe(1);
+        });
 
         it('should respond to switch interactions', function () {
             html = '<div><div data-legend-for="testChart"><div data-switch-series="vcr">vcr</div><div data-switch-series="t">t</div><div data-switch-series="ctr">ctr</div></div>';
