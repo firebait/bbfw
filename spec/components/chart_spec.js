@@ -197,7 +197,7 @@ describe('Suit Chart Component', function () {
             expect(chartComponent.chart.state().disabled).toEqual([false, false, false]);
         });
 
-        it('should hide the controls when the parameter showControls is true', function () {
+        it('should hide the controls when the parameter showControls is false', function () {
             html = '<div id="testChart" suit-component-chart data-source="collection" data-show-controls="false" data-chart-type="stackedarea" data-source="collection" data-x-axis-format="datetime" data-theme="dark" data-tooltips="true"></div></div>';
             el = $(html)[0];
             collection = new Suit.Collection([
