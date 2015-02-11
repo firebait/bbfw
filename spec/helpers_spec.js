@@ -41,7 +41,7 @@ describe('Suit.Helpers.Formatters', function () {
             var result = formatters.formatNumber(undefined);
             expect(result).toBe('0');
         });
-        it('shuold return 0 if null', function () {
+        it('should return 0 if null', function () {
             var result = formatters.formatNumber(null);
             expect(result).toBe('0');
         });
@@ -57,6 +57,10 @@ describe('Suit.Helpers.Formatters', function () {
             var result = formatters.formatNumber(0.44);
             expect(result).toBe('0.44');
         });
+        it('should return 0 if NaN', function () {
+            var result = formatters.formatNumber(NaN);
+            expect(result).toBe('0');
+        });
     });
 
     describe('formatNumberPercentage', function () {
@@ -64,9 +68,13 @@ describe('Suit.Helpers.Formatters', function () {
             var result = formatters.formatNumberPercentage(undefined);
             expect(result).toBe('0%');
         });
-        it('shuold return 0 if null', function () {
+        it('should return 0 if null', function () {
             var result = formatters.formatNumberPercentage(null);
             expect(result).toBe('0%');
+        });
+        it('should return 100% with a value above to 100', function () {
+            var result = formatters.formatNumberPercentage(101);
+            expect(result).toBe('100%');
         });
         it('should work with integers', function () {
             var result = formatters.formatNumberPercentage(25);
