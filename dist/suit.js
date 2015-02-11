@@ -3170,7 +3170,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         } else if (table.data('isStuck') === true && scrollTop < table.data('startingOffset')) {
             table.data('isStuck', false);
             table.data('startingOffset', false);
-            table.css({position: 'absolute'});
+            table.css({position: 'static'});
             infiniteScrollContainer.css({'margin-top': 0});
         }
     },
