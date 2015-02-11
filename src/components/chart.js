@@ -231,6 +231,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
             chart.xAxis.tickValues(_.bind(this.xTicks, this));
             chart.showLegend(this.showLegend);
+            chart.showControls(this.showControls);
         } else if (this.chartType === 'bar') {
             chart = nv.models.discreteBarChart();
             chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
