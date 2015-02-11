@@ -403,6 +403,12 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         this.$('.error').off('hover');
         this.trigger('beforeClose');
         this.beforeClose();
+        //Remove the tooltips associated to the view
+        _.each(this.$el.find('[data-error-key]'), function (htmlElement) {
+                var $htmlElement = $(htmlElement);
+                var dataErrorKey = $htmlElement.attr('data-error-key');
+                $('.tooltip[data-error-key="' + dataErrorKey + '"]').remove();
+            });
         // Remove from parent children.
         if (!_.isUndefined(this.parent)) {
             var index = this.parent.children.indexOf(this);

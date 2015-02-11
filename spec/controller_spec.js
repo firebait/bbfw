@@ -55,13 +55,25 @@ describe('Suit Controller', function () {
 
         it('should go to index page, if last known route and fallback don\'t exist', function () {
             var historySpy = sinon.spy(Backbone.history, 'navigate');
-
             App.routesHistory.previousRoute = null;
             controller.goBack();
             expect(historySpy).toHaveBeenCalled();
             expect(historySpy).toHaveBeenCalledWith('');
-
             Backbone.history.navigate.restore();
+        });
+    });
+
+    describe('should test if user is autenticated but not allowed to Suit Can go then should navigate to home', function () {
+        it('should verify that url redirection is to / when authenticated but does not have Can Go', function () {
+            var historySpy = sinon.spy(Backbone.history, 'navigate');
+            var canGoFalse = sinon.stub(Suit.Can, 'go', function () { return false; });
+            var canAuthenticate = sinon.stub(Suit.Can, 'authenticate', function () { return true; });
+            controller.initialize();
+            expect(historySpy).toHaveBeenCalled();
+            expect(historySpy).toHaveBeenCalledWith('/');
+            Backbone.history.navigate.restore();
+            canGoFalse.restore();
+            canAuthenticate.restore();
         });
     });
 });
