@@ -111,7 +111,7 @@ Suit.Helpers.Formatters = _.extend(_.str, {
     },
     /** Formats a number to be separated by commas. */
     formatNumber: function (num) {
-        if (!_.isUndefined(num) && num !== null) {
+        if (!_.isUndefined(num) && num !== null && !_.isNaN(num)) {
             if (num % 1 !== 0) {
                 num = (parseFloat(num)).toPrecision(3);
 
@@ -126,6 +126,7 @@ Suit.Helpers.Formatters = _.extend(_.str, {
     },
     /** Formats a number and add % symbol at the end */
     formatNumberPercentage: function (num) {
+        num = num > 100 ? 100 : num;
         return Suit.Helpers.Formatters.formatNumber(num) + '%';
     },
     /** Formats a number into one decimal place */
