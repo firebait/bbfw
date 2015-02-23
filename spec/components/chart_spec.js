@@ -44,6 +44,14 @@ describe('Suit Chart Component', function () {
             expect(spy.calledOnce).toEqual(true);
             spy.restore();
         });
+
+        it('should correctly format dates', function () {
+            var unixDate = moment('Mon Feb 23 2015 17:14:42 GMT+0000').unix();
+            var utcExpectedDatetimeFormat = '2/23/2015 5:14 pm';
+            var utcExpectedDateFormat = '2/23/2015';
+            expect(chartComponent.datetimeFormat(unixDate)).toEqual(utcExpectedDatetimeFormat);
+            expect(chartComponent.dateFormat(unixDate)).toEqual(utcExpectedDateFormat);
+        });
     });
 
     describe('line chart', function () {

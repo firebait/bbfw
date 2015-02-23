@@ -2349,13 +2349,13 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     abbreviateFormat: function (d) {
         return Suit.Helpers.Formatters.abbreviateNumber(d);
     },
-    /** Date formatter will format a timestamp into YYYY/MM/DD */
+    /** Date formatter will format a timestamp into M/D/YYYY h:mm a */
     datetimeFormat: function (d) {
-        return moment.unix(d).utc().format('YYYY/MM/DD HH:mm');
+        return moment.unix(d).utc().format('M/D/YYYY h:mm a');
     },
-    /** Date formatter will format a timestamp into YYYY/MM/DD */
+    /** Date formatter will format a timestamp into M/D/YYYY */
     dateFormat: function (d) {
-        return moment.unix(d).utc().format('YYYY/MM/DD');
+        return moment.unix(d).utc().format('M/D/YYYY');
     },
     /** Thousand formatter will format numbers with thousand separator */
     thousandFormat: function (d) {
