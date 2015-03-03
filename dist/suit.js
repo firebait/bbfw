@@ -270,6 +270,12 @@ Suit.Helpers.Formatters = _.extend(_.str, {
 
     ordinalize: function () {
         return _.ordinalize.apply(_, arguments);
+    },
+
+    absolute: function (value) {
+        value = Math.abs(value);
+        if (_.isNaN(value)) { return 0; }
+        return value;
     }
 
 });

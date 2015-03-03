@@ -240,6 +240,20 @@ describe('Suit.Helpers.Formatters', function () {
         });
     });
 
+    describe('format absolute', function () {
+
+        it('should convert a number from negative to absolute', function () {
+            var result = formatters.absolute('-10');
+            expect(result).toEqual(10);
+        });
+
+        it('should 0 for NaN', function () {
+            var result = formatters.absolute('abc');
+            expect(result).toEqual(0);
+        });
+
+    });
+
     describe('infleccion', function () {
 
         it('should lowercase a string', function () {
