@@ -23,7 +23,7 @@ Suit.Helpers = {
             _.each(_.keys(attributes), function (key) {
                 var value = attributes[key];
                 var newKey = _.str.underscored(key);
-                if (attributes[key]) {
+                if (_.has(attributes, key)) {
                     delete attributes[key];
                 }
                 // We need to parse all objects recursive.
