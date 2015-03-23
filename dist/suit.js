@@ -520,6 +520,66 @@ Suit.Validation = {
                 }
             }
         },
+        /**
+        * Checks if the given number is greater than number
+        * @param {String} attr - the attribute's name
+        * @param {String} val - the attribute's value
+        * @param {Number} num - number to compare
+        */
+        greaterThan: function (attr, val, num) {
+            var _val = parseInt(val, 10);
+            if (!_.isNumber(_val)  || _.isNaN(_val) || _val <= num) {
+                return 'The ' + attr + ' has to be greater than ' + num;
+            }
+        },
+        /**
+        * Checks if the given number is greater than or equal to number
+        * @param {String} attr - the attribute's name
+        * @param {String} val - the attribute's value
+        * @param {Number} num - number to compare
+        */
+        greaterThanOrEqual: function (attr, val, num) {
+            var _val = parseInt(val, 10);
+            if (!_.isNumber(_val)  || _.isNaN(_val) || _val < num) {
+                return 'The ' + attr + ' has to be greater than or equal to ' + num;
+            }
+        },
+        /**
+        * Checks if the given number is less than or equal to number
+        * @param {String} attr - the attribute's name
+        * @param {String} val - the attribute's value
+        * @param {Number} num - number to compare
+        */
+        lessThanOrEqual: function (attr, val, num) {
+            var _val = parseInt(val, 10);
+            if (!_.isNumber(_val)  || _.isNaN(_val) || _val > num) {
+                return 'The ' + attr + ' has to be less than or equal to ' + num;
+            }
+        },
+        /**
+        * Checks if the given number is less than number
+        * @param {String} attr - the attribute's name
+        * @param {String} val - the attribute's value
+        * @param {Number} num - number to compare
+        */
+        lessThan: function (attr, val, num) {
+            var _val = parseInt(val, 10);
+            if (!_.isNumber(_val)  || _.isNaN(_val) || _val >= num) {
+                return 'The ' + attr + ' has to be less than ' + num;
+            }
+        },
+        /**
+        * Checks if the given number is inside the valid range
+        * @param {String} attr - the attribute's name
+        * @param {String} val - the attribute's value
+        * @param {Array[Number]} range - an array containing the inclusive min value and max value
+        */
+        numericRange: function (attr, val, range) {
+            var _val = parseInt(val, 10);
+            if (!_.isNumber(_val)  || _.isNaN(_val) || _val < range[0] || _val > range[1]) {
+                return 'The ' + attr + ' is not in the range of ' + range[0] + ' and ' + range[1];
+            }
+        },
     },
     /** Bootstrap for the validation method, used by the .validate() and .isValid()
       * methods. This will return an object if the validation didn't pass, or will
