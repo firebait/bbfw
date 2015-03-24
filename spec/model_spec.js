@@ -314,13 +314,13 @@ describe('Suit Model', function () {
         });
 
         describe('numeric range validations', function () {
-            it('should validate that atttribute is between the numeric range', function () {
+            it('should validate that atttribute is between the numeric range inclusive', function () {
                 var Model;
                 Model = Suit.Model.extend({
                     validates: {
                         name: {
-                            rules: ['required', 'numericRange'],
-                            numericRange: [0, 100]
+                            rules: ['required', 'numeric'],
+                            numeric: {range: [0, 100], rangeInclusive: true}
                         }
                     }
                 });
@@ -330,10 +330,32 @@ describe('Suit Model', function () {
                 expect(model.isValid()).toBe(true);
                 model.set('name', 200);
                 expect(model.isValid()).toBe(false);
-                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100');
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 inclusive.');
                 model.set('name', -100);
                 expect(model.isValid()).toBe(false);
-                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100');
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 inclusive.');
+            });
+
+            it('should validate that atttribute is between the numeric range not inclusive', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {range: [0, 100], rangeInclusive: false}
+                        }
+                    }
+                });
+                model = new Model({name: 0});
+                expect(model.isValid()).toBe(false);
+                model.set('name', 100);
+                expect(model.isValid()).toBe(false);
+                model.set('name', 200);
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 not inclusive.');
+                model.set('name', -100);
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 not inclusive.');
             });
 
             it('should validate that atttribute greater than', function () {
@@ -341,8 +363,8 @@ describe('Suit Model', function () {
                 Model = Suit.Model.extend({
                     validates: {
                         name: {
-                            rules: ['required', 'greaterThan'],
-                            greaterThan: 100
+                            rules: ['required', 'numeric'],
+                            numeric: {gt: 100}
                         }
                     }
                 });
@@ -358,8 +380,8 @@ describe('Suit Model', function () {
                 Model = Suit.Model.extend({
                     validates: {
                         name: {
-                            rules: ['required', 'greaterThanOrEqual'],
-                            greaterThanOrEqual: 100
+                            rules: ['required', 'numeric'],
+                            numeric: {gte: 100}
                         }
                     }
                 });
@@ -375,8 +397,8 @@ describe('Suit Model', function () {
                 Model = Suit.Model.extend({
                     validates: {
                         name: {
-                            rules: ['required', 'lessThan'],
-                            lessThan: 100
+                            rules: ['required', 'numeric'],
+                            numeric: {lt: 100}
                         }
                     }
                 });
@@ -392,8 +414,8 @@ describe('Suit Model', function () {
                 Model = Suit.Model.extend({
                     validates: {
                         name: {
-                            rules: ['required', 'lessThanOrEqual'],
-                            lessThanOrEqual: 100
+                            rules: ['required', 'numeric'],
+                            numeric: {lte: 100}
                         }
                     }
                 });
