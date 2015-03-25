@@ -3504,11 +3504,12 @@ Suit.Components.Binders.view = {
             }
             attr[_.str.camelize(_.str.underscored(key))] = model || value;
         });
-        $el.removeAttr('suit-view');
-        this.$view = new Root(attr);
-        this.$view.setParent(this.view.models);
+
         // We need to render after it binds.
         _.defer(function () {
+            $el.removeAttr('suit-view');
+            self.$view = new Root(attr);
+            self.$view.setParent(self.view.models);
             self.$view.render();
         });
     },
