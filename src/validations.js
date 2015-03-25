@@ -89,14 +89,53 @@ Suit.Validation = {
                     .replace('{attr}', _.str.capitalize(attr));
             }
         },
-        // Validates if the value introduced is actually a numeric value
-        numeric: function (attr, val) {
+        /** Validates if the value introduced is actually a numeric value
+        @param {Model.attr} attr - model attribute to validate
+        @param {Numeric} val - numeric number to validate against.
+        @param {Object} options. The following options are valid
+                        options.range[] - array with min and max value for the range.
+                        options.rangeInclusive - boolean indicating if range should be inclusive or not.
+                        options.gt - numeric for greater than comparison.
+                        options.gte - numeric for greater than or equal comparison.
+                        options.lt - numeric for less than comparison.
+                        options.lte - numeric for less than or equal comparison.
+
+        */
+        numeric: function (attr, val, options) {
             // Only validates if value is present
             if (val || val === 0) {
                 val = parseFloat(val);
                 if (!_.isNumber(val) || _.isNaN(val)) {
                     return this.validatorMessages.numeric
                         .replace('{attr}', _.str.capitalize(attr));
+                } else if (!_.isUndefined(options)) {
+                    if (options.range) {
+                        if (options.rangeInclusive && (val < options.range[0] || val > options.range[1])) {
+                            return 'The ' + attr + ' is not in the range of ' + options.range[0] + ' and ' + options.range[1] + ' inclusive.';
+                        } else if (options.rangeInclusive === false && (val <= options.range[0] || val >= options.range[1])) {
+                            return 'The ' + attr + ' is not in the range of ' + options.range[0] + ' and ' + options.range[1] + ' not inclusive.';
+                        }
+                    }
+                    if (options.gt) {
+                        if (val <= options.gt) {
+                            return 'The ' + attr + ' has to be greater than ' + options.gt;
+                        }
+                    }
+                    if (options.gte) {
+                        if (val < options.gte) {
+                            return 'The ' + attr + ' has to be greater than or equal to ' + options.gte;
+                        }
+                    }
+                    if (options.lt) {
+                        if (val >= options.lt) {
+                            return 'The ' + attr + ' has to be less than ' + options.lt;
+                        }
+                    }
+                    if (options.lte) {
+                        if (val > options.lte) {
+                            return 'The ' + attr + ' has to be less than or equal to ' + options.lte;
+                        }
+                    }
                 }
             }
         },

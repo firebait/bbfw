@@ -313,6 +313,121 @@ describe('Suit Model', function () {
 
         });
 
+        describe('numeric range validations', function () {
+            it('should validate that atttribute is between the numeric range inclusive', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {range: [0, 100], rangeInclusive: true}
+                        }
+                    }
+                });
+                model = new Model({name: 0});
+                expect(model.isValid()).toBe(true);
+                model.set('name', 100);
+                expect(model.isValid()).toBe(true);
+                model.set('name', 200);
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 inclusive.');
+                model.set('name', -100);
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 inclusive.');
+            });
+
+            it('should validate that atttribute is between the numeric range not inclusive', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {range: [0, 100], rangeInclusive: false}
+                        }
+                    }
+                });
+                model = new Model({name: 0});
+                expect(model.isValid()).toBe(false);
+                model.set('name', 100);
+                expect(model.isValid()).toBe(false);
+                model.set('name', 200);
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 not inclusive.');
+                model.set('name', -100);
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name is not in the range of 0 and 100 not inclusive.');
+            });
+
+            it('should validate that atttribute greater than', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {gt: 100}
+                        }
+                    }
+                });
+                model = new Model({name: 100});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be greater than 100');
+                model.set('name', 101);
+                expect(model.isValid()).toBe(true);
+            });
+
+            it('should validate that atttribute greater than or equal', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {gte: 100}
+                        }
+                    }
+                });
+                model = new Model({name: 99});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be greater than or equal to 100');
+                model.set('name', 100);
+                expect(model.isValid()).toBe(true);
+            });
+
+            it('should validate that atttribute less than', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {lt: 100}
+                        }
+                    }
+                });
+                model = new Model({name: 100});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be less than 100');
+                model.set('name', 99);
+                expect(model.isValid()).toBe(true);
+            });
+
+            it('should validate that atttribute less than or equal', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {lte: 100}
+                        }
+                    }
+                });
+                model = new Model({name: 101});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be less than or equal to 100');
+                model.set('name', 100);
+                expect(model.isValid()).toBe(true);
+            });
+
+        });
+
         describe('numeric validation', function () {
 
             it('should validate if value is numeric', function () {
