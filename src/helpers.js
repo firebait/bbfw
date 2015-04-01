@@ -98,7 +98,7 @@ Suit.Helpers = {
 Suit.Helpers.Formatters = _.extend(_.str, {
     /** Formats a date on MM/DD/YYYY way */
     formatDate: function (date) {
-        if (_.isUndefined(date) || date === '') {
+        if (_.isUndefined(date) || _.isNull(date) || date === '') {
             return '';
         } else {
             return moment(date).format('MM/DD/YYYY');
