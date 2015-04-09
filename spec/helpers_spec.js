@@ -25,6 +25,17 @@ describe('Suit Helpers', function () {
 });
 
 describe('Suit.Helpers.Formatters', function () {
+    describe('formatDateTime', function () {
+        it('should return an empty string if no date was specified', function () {
+            var result = formatters.formatDateTime();
+            expect(result).toBe('');
+        });
+        it('should format a date into our date format (MM/DD/YYYY hh:mm A)', function () {
+            var result = formatters.formatDateTime(moment('2015-04-07T23:00:00-07:00'));
+            expect(result).toBe('04/07/2015 11:00 PM');
+        });
+    });
+
     describe('formatDate', function () {
         it('should return an empty string if no date was specified', function () {
             var result = formatters.formatDate();

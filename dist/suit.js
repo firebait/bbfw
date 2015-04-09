@@ -101,6 +101,16 @@ Suit.Helpers = {
 
 /** Formatting helpers for the Suit Framework. This includes the _.str elements */
 Suit.Helpers.Formatters = _.extend(_.str, {
+    /** Formats a datetime on MM/DD/YYYY hh:mm A way
+        @params {string}-datetime-string containing a string with datatime on iso-8601
+    */
+    formatDateTime: function (datetime) {
+        if (_.isUndefined(datetime) || _.isNull(datetime) || _.str.isBlank(datetime)) {
+            return '';
+        } else {
+            return moment(datetime).format('MM/DD/YYYY hh:mm A');
+        }
+    },
     /** Formats a date on MM/DD/YYYY way */
     formatDate: function (date) {
         if (_.isUndefined(date) || _.isNull(date) || date === '') {
