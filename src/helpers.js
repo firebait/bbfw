@@ -103,7 +103,7 @@ Suit.Helpers.Formatters = _.extend(_.str, {
         if (_.isUndefined(datetime) || _.isNull(datetime) || _.str.isBlank(datetime)) {
             return '';
         } else {
-            return moment(datetime).format('MM/DD/YYYY hh:mm A');
+            return moment(datetime).parseZone().format('MM/DD/YYYY hh:mm A');
         }
     },
     /** Formats a date on MM/DD/YYYY way */
