@@ -333,7 +333,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             num,
             values;
         $('body').append(span);
-        num = Math.floor(w / (span.width() + 20)) - 2;
+        num = Math.floor(w / (span.width() + 40)) - 2;
         span.remove();
         if (num >= xData.length) {
             values = _.map(xData, function (item) {
