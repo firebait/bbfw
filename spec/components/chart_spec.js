@@ -277,8 +277,16 @@ describe('Suit Chart Component', function () {
     });
 
     describe('bar chart', function () {
+
+        var flushAllD3Transitions = function () {
+            var now = Date.now;
+            Date.now = function () { return Infinity; };
+            d3.timer.flush();
+            Date.now = now;
+        };
+
         beforeEach(function () {
-            html = '<div><div id="testChart" suit-component-chart data-source="collection" data-chart-type="bar" data-x-axis-format="datetime" data-theme="dark" data-tooltips="true"></div></div>';
+            html = '<div><div id="testChart" suit-component-chart data-source="collection" style="height: 270px" data-chart-type="bar" data-tooltips-include-small-bars="true" data-x-axis-format="datetime" data-theme="dark" data-tooltips="true"></div></div>';
             el = $(html)[0];
             collection = new Suit.Collection([
                 {timestamp: moment().add(0, 'days'), ctr: 1500, vcr: 1500, t: 1500},
@@ -288,7 +296,6 @@ describe('Suit Chart Component', function () {
             view.render();
             chartComponent = view.components.testChart;
         });
-
 
         it('should massage source data to conform to nvd3\'s requirements', function () {
             var t = [moment().add(0, 'days'), moment().add(1, 'days'), moment().add(2, 'days'), moment().add(3, 'days')];
@@ -306,6 +313,23 @@ describe('Suit Chart Component', function () {
             expect(chartComponent.chartData(collection)).toEqual(expectedOutput);
         });
 
+        it('should render a overlay-bar when is initialized the attribute data-tooltips-include-small-bars="true"', function () {
+            flushAllD3Transitions();
+
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(1) .discreteBar').attr('width')).toBe('117');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(1) .discreteBar').attr('height')).toBe('114');
+
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(1) .overlay-bar').attr('width')).toBe('117');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(1) .overlay-bar').attr('height')).toBe('76');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(1) .overlay-bar').attr('y')).toBe('-76');
+
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) .discreteBar').attr('width')).toBe('117');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) .discreteBar').attr('height')).toBe('190');
+
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) .overlay-bar').attr('width')).toBe('117');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) .overlay-bar').attr('height')).toBe('0');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) .overlay-bar').attr('y')).toBe('0');
+        });
     });
 
     describe('pie chart', function () {
