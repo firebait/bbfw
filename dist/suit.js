@@ -2347,13 +2347,13 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     },
 
     xTicks: function (data) {
-        var w = this.$el.width(),
+        var w = this.$el.width() - this.margin.left - this.margin.right,
             xData = data[0].values,
             span = $('<span style="visibility: hidden;">' + this.getFormatter(this.xAxisFormat)(xData[0].x) + '</span>'),
             num,
             values;
         $('body').append(span);
-        num = Math.floor(w / (span.width() + 40)) - 2;
+        num = Math.floor(w / (span.width() + 50)) - 2;
         span.remove();
         if (num >= xData.length) {
             values = _.map(xData, function (item) {
