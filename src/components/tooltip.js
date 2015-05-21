@@ -3,13 +3,19 @@
 window.rivets.binders.tooltip = {
     bind: function (el) {
         var currentTarget = $(el);
+
+        var message = this.keypath;
+        var color = currentTarget.data('color');
+        var tooltip = $('#suit-tooltip');
+        
+        if (tooltip.length === 0) {
+            tooltip = $('<div id="suit-tooltip" class="tooltip ' + color + '"><div class="tooltip-content">' +  message + '</div><div class="tooltip-arrow"></div></div>');
+            $('body').append(tooltip);
+        }
         
         this.callback = function () {
-            var tooltip = $('body').find('#suit-tooltip');
-            var tooltipContent = $('body').find('#suit-tooltip .tooltip-content');
-            var message = $(el).attr('suit-tooltip');
-            tooltipContent.text(message);
-
+            tooltip.attr('class', 'tooltip ' + color);
+            tooltip.children('.tooltip-content').text(message);
             tooltip.css({
                 top: currentTarget.offset().top - tooltip.height() - 12,
                 left: currentTarget.offset().left - 10,
@@ -17,23 +23,14 @@ window.rivets.binders.tooltip = {
             }).show();
         };
         this.hideCallback = function () {
-            var tooltip = $('body').find('#suit-tooltip');
             tooltip.hide();
         };
-        $(el).on('mouseover', this.callback);
-        $(el).on('mouseout', this.hideCallback);
+        currentTarget.on('mouseover', this.callback);
+        currentTarget.on('mouseout', this.hideCallback);
     },
     unbind: function (el) {
-        $(el).off('mouseover', this.callback);
-        $(el).off('mouseout', this.hideCallback);
-      
-    },
-    routine: function (el) {
-        var message = $(el).attr('suit-tooltip');
-        var color = $(el).attr('data-color');
-        var tooltip = $('<div id="suit-tooltip" class="tooltip ' + color + '"><div class="tooltip-content">' +  message + '</div><div class="tooltip-arrow"></div></div>');
-        if ($('#suit-tooltip').length === 0) {
-            $('body').append(tooltip);
-        }
+        var currentTarget = $(el);
+        currentTarget.off('mouseover', this.callback);
+        currentTarget.off('mouseout', this.hideCallback);
     }
 };
