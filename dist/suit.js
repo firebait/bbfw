@@ -539,29 +539,29 @@ Suit.Validation = {
                     return this.validatorMessages.numeric
                         .replace('{attr}', _.str.capitalize(attr));
                 } else if (!_.isUndefined(options)) {
-                    if (options.range) {
+                    if (!_.isUndefined(options.range)) {
                         if (options.rangeInclusive && (val < options.range[0] || val > options.range[1])) {
                             return 'The ' + attr + ' is not in the range of ' + options.range[0] + ' and ' + options.range[1] + ' inclusive.';
                         } else if (options.rangeInclusive === false && (val <= options.range[0] || val >= options.range[1])) {
                             return 'The ' + attr + ' is not in the range of ' + options.range[0] + ' and ' + options.range[1] + ' not inclusive.';
                         }
                     }
-                    if (options.gt) {
+                    if (!_.isUndefined(options.gt)) {
                         if (val <= options.gt) {
                             return 'The ' + attr + ' has to be greater than ' + options.gt;
                         }
                     }
-                    if (options.gte) {
+                    if (!_.isUndefined(options.gte)) {
                         if (val < options.gte) {
                             return 'The ' + attr + ' has to be greater than or equal to ' + options.gte;
                         }
                     }
-                    if (options.lt) {
+                    if (!_.isUndefined(options.lt)) {
                         if (val >= options.lt) {
                             return 'The ' + attr + ' has to be less than ' + options.lt;
                         }
                     }
-                    if (options.lte) {
+                    if (!_.isUndefined(options.lte)) {
                         if (val > options.lte) {
                             return 'The ' + attr + ' has to be less than or equal to ' + options.lte;
                         }
@@ -648,6 +648,7 @@ Suit.Validation = {
         return error;
     }
 };
+
 'use strict';
 
 Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{

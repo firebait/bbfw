@@ -375,6 +375,23 @@ describe('Suit Model', function () {
                 expect(model.isValid()).toBe(true);
             });
 
+            it('should validate that atttribute greater than zero', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {gt: 0}
+                        }
+                    }
+                });
+                model = new Model({name: 0});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be greater than 0');
+                model.set('name', 1);
+                expect(model.isValid()).toBe(true);
+            });
+
             it('should validate that atttribute greater than or equal', function () {
                 var Model;
                 Model = Suit.Model.extend({
@@ -389,6 +406,23 @@ describe('Suit Model', function () {
                 expect(model.isValid()).toBe(false);
                 expect(model.validate().name[0]).toBe('The name has to be greater than or equal to 100');
                 model.set('name', 100);
+                expect(model.isValid()).toBe(true);
+            });
+
+            it('should validate that atttribute greater than or equal zero', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {gte: 0}
+                        }
+                    }
+                });
+                model = new Model({name: -1});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be greater than or equal to 0');
+                model.set('name', 0);
                 expect(model.isValid()).toBe(true);
             });
 
@@ -409,6 +443,23 @@ describe('Suit Model', function () {
                 expect(model.isValid()).toBe(true);
             });
 
+            it('should validate that atttribute less than zero', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {lt: 0}
+                        }
+                    }
+                });
+                model = new Model({name: 0});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be less than 0');
+                model.set('name', -1);
+                expect(model.isValid()).toBe(true);
+            });
+
             it('should validate that atttribute less than or equal', function () {
                 var Model;
                 Model = Suit.Model.extend({
@@ -426,6 +477,22 @@ describe('Suit Model', function () {
                 expect(model.isValid()).toBe(true);
             });
 
+            it('should validate that atttribute less than or equal zero', function () {
+                var Model;
+                Model = Suit.Model.extend({
+                    validates: {
+                        name: {
+                            rules: ['required', 'numeric'],
+                            numeric: {lte: 0}
+                        }
+                    }
+                });
+                model = new Model({name: 1});
+                expect(model.isValid()).toBe(false);
+                expect(model.validate().name[0]).toBe('The name has to be less than or equal to 0');
+                model.set('name', 0);
+                expect(model.isValid()).toBe(true);
+            });
         });
 
         describe('numeric validation', function () {
