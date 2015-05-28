@@ -1955,12 +1955,13 @@ Suit.Components.Alert = Suit.Component.extend(/** @lends Suit.Components.Alert.p
     initialize: function (options) {
         Suit.Component.prototype.initialize.apply(this, [options]);
         this.type = this.options.type || 'information';
+        this.timeout = this.options.timeout;
         this.message = this.options.message || 'Suit alert box!';
         this.listenTo(Backbone.history, 'route', this.close);
     },
     /** className for the component, there are four(4) types of alerts. */
     className: function () {
-        return 'alert-box-set-' + this.type;
+        return 'alert-box-' + this.type;
     },
     /** Tagnanme for this component is a */
     tagName: 'a',
@@ -1977,22 +1978,29 @@ Suit.Components.Alert = Suit.Component.extend(/** @lends Suit.Components.Alert.p
     /** Type of alert box, it could be (confirmation, error, warning, information) */
     type: 'information',
     /** Alert box icon to show before text */
-    alertIcon: 'i'
+    alertIcon: 'i',
+    afterRender: function () {
+        if (this.timeout) {
+            var self = this;
+            this.$el.delay(this.timeout).fadeOut('slow', function () {
+                self.close();
+            });
+
+        }
+    }
 
 });
 Suit.Components.ConfirmationAlert = Suit.Components.Alert.extend(/** @lends Suit.Component.ConfirmationAlert.prototype */{
+    initialize: function (options) {
+        Suit.Components.Alert.prototype.initialize.apply(this, [options]);
+        this.timeout = this.options.timeout || 2000;
+    },
     /**
       * @class Suit.Components.ConfirmationAlert
       * @augments Suit.Components.Alert
       */
     className: 'alert-box-confirmation',
-    alertIcon: 'c',
-    afterRender: function () {
-        var self = this;
-        this.$el.delay(2000).fadeOut('slow', function () {
-            self.close();
-        });
-    }
+    alertIcon: 'c'
 });
 Suit.Components.ErrorAlert = Suit.Components.Alert.extend(/** @lends Suit.Components.ErrorAlert.prototype */{
     /**
