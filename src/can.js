@@ -32,7 +32,6 @@ _.extend(Can.prototype, Events, /** @lends Can.prototype */{
 
     go: function (controller, action) {
         var rule;
-        var user = App.currentUser;
         try {
             // Check if it requires login. Default is True.
             var baseRule = App.canRules;
@@ -52,6 +51,7 @@ _.extend(Can.prototype, Events, /** @lends Can.prototype */{
         } catch (error) {
             return true;
         }
+        var user = App.currentUser;
         var permissions = rule.permissions;
         if (_.contains(permissions, user.get('permission'))) {
             return true;
