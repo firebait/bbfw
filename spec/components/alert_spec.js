@@ -15,6 +15,18 @@ describe('Suit Component Alert', function () {
             expect(el.find('p').text()).toEqual('Hello World');
         });
 
+        it('should render default template and dissapper if timeout option provided', function () {
+            var genericAlert = new Suit.Components.Alert({timeout: 3000});
+            var el = genericAlert.render().$el;
+            var element = $('<div></div>');
+            element.html(el);
+            expect(el.prop('tagName')).toEqual('A');
+            expect(el.find('span').length).toBe(2);
+            expect(element.find('.alert-box-information').length).toBe(1);
+            jasmine.Clock.tick(3100);
+            expect(element.find('.alert-box-information').length).toBe(0);
+        });
+
         describe('Confirmation Alert', function () {
 
             var element;
