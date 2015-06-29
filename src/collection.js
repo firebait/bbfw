@@ -64,68 +64,62 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
     },
     /** Performs dirty checking of the collection only if it contains models of type Suit.Model*/
     _dirtyCheck: function (model, action) {
-        var dirtyModelIndex = -1,
-        isDirty = false;
+        var isDirty = false;
 
         if (model instanceof Suit.Model) {
-            var self = this;
             if (model.isDirty || action === 'change') {
-                _.find(this._dirtyModels, function (dirtyModelContainer, index) {
-                    var foundMatchingModel = !_.isUndefined(dirtyModelContainer) &&
-                                             !_.isUndefined(dirtyModelContainer.model) &&
-                                             dirtyModelContainer.action === action &&
-                                             ( //dirtyModelContainer.model.cid === model.clonedModel.cid ||
-                                             self._checkForMatchingModelAndUpdateCid(model, dirtyModelContainer.model));
-                    dirtyModelIndex = foundMatchingModel ? index : -1;
-                    return foundMatchingModel;
-                });
-
-                if (dirtyModelIndex !== -1) {
-                    this._dirtyModels.splice(dirtyModelIndex, 1);
-                } else if (model.isDirty) {
-                    this._dirtyModels.push({model: model.clonedModel, action: action});
-                }
+                this._handleAddChangeEvents(model, action);
             } else if (action === 'add') {
-                _.find(this._dirtyModels, function (dirtyModelContainer, index) {
-                    var foundMatchingModel = !_.isUndefined(dirtyModelContainer) &&
-                                             !_.isUndefined(dirtyModelContainer.model) &&
-                                             ( //dirtyModelContainer.model.cid === model.clonedModel.cid ||
-                                             self._checkForMatchingModelAndUpdateCid(model, dirtyModelContainer.model));
-                    dirtyModelIndex = foundMatchingModel ? index : -1;
-                    return foundMatchingModel;
-                });
-
-                if (dirtyModelIndex !== -1) {
-                    this._dirtyModels.splice(dirtyModelIndex, 1);
-                } else {
-                    this._dirtyModels.push({model: model.clonedModel, action: action});
-                }
+                this._handleAddChangeEvents(model, action);
             } else if (action === 'remove') {
-                var anyMatch = false;
-                //this._dirtyModels = 
-                _.filter(this._dirtyModels, function (dirtyModelContainer, index) {
-                    var foundMatchingModel = !_.isUndefined(dirtyModelContainer.model) &&
-                                             //dirtyModelContainer.model.cid === model.clonedModel.cid ||
-                                             self._checkForMatchingModelAndUpdateCid(model, dirtyModelContainer.model);
-                    anyMatch = foundMatchingModel || anyMatch;
-                    dirtyModelIndex = foundMatchingModel ? index : -1;
-                    return !foundMatchingModel;
-                });
-
-                if (!anyMatch) {
-                    this._dirtyModels.push({model: model.clonedModel, action: action});
-                } else {
-                    this._dirtyModels.splice(dirtyModelIndex, 1);
-                }
+                this._handleRemoveEvent(model, action);
             }
             isDirty = !_.isEmpty(this._dirtyModels);
         }
         return isDirty;
     },
-    _checkForMatchingModelAndUpdateCid: function (knownModel, candidateModel) {
-        var isMatchingModel = this._isMatchingModel(knownModel.attributes, candidateModel.attributes);
-        //knownModel.cid = candidateModel.cid;
-        return isMatchingModel;
+    _handleAddChangeEvents: function (model, action) {
+        var self = this,
+            dirtyModelIndex = -1;
+
+        _.find(this._dirtyModels, function (dirtyModelContainer, index) {
+            var foundMatchingModel = !_.isUndefined(dirtyModelContainer) && !_.isUndefined(dirtyModelContainer.model);
+
+            if (action === 'add') {
+                foundMatchingModel = foundMatchingModel && self._isMatchingModel(model, dirtyModelContainer.model);
+            } else {
+                foundMatchingModel = foundMatchingModel && dirtyModelContainer.action === action &&
+                                     (dirtyModelContainer.model.cid === model.clonedModel.cid ||
+                                     self._isMatchingModel(model, dirtyModelContainer.model));
+            }
+
+            dirtyModelIndex = foundMatchingModel ? index : -1;
+        });
+
+        if (dirtyModelIndex !== -1) {
+            this._dirtyModels.splice(dirtyModelIndex, 1);
+        } else {
+            this._dirtyModels.push({model: model.clonedModel, action: action});
+        }
+    },
+    _handleRemoveEvent: function (model, action) {
+        var anyMatch = false,
+            self = this,
+            dirtyModelIndex = -1;
+
+        _.filter(this._dirtyModels, function (dirtyModelContainer, index) {
+            var foundMatchingModel = !_.isUndefined(dirtyModelContainer.model) &&
+                                     self._isMatchingModel(model, dirtyModelContainer.model);
+            anyMatch = foundMatchingModel || anyMatch;
+            dirtyModelIndex = foundMatchingModel ? index : -1;
+            return !foundMatchingModel;
+        });
+
+        if (!anyMatch) {
+            this._dirtyModels.push({model: model.clonedModel, action: action});
+        } else {
+            this._dirtyModels.splice(dirtyModelIndex, 1);
+        }
     },
     _findModelIndex: function (knownModels, candidateModel) {
         var self = this,
@@ -133,7 +127,6 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         _.find(knownModels, function (knownModelContainer, index) {
             var isMatchingModel = knownModelContainer.cid === candidateModel.cid ||
                                   self._isMatchingModel(knownModelContainer.attributes, candidateModel.attributes);
-            //var isMatchingModel = self._isMatchingModel(knownModelContainer.attributes, candidateModel.attributes);
             modelIndex = isMatchingModel ? index : -1;
             return isMatchingModel;
         });
@@ -164,8 +157,6 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         var self = this,
             dirtyModels = [];
         if (this._dirtyModels.length > 0) {
-
-
             dirtyModels = _.chain(this._dirtyModels).groupBy(function (dirtyModelContainer) {
                 var isDefined = !_.isUndefined(dirtyModelContainer) && !_.isUndefined(dirtyModelContainer.model);
                 return isDefined ? dirtyModelContainer.model.cid : null;
@@ -175,44 +166,15 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
                     var dirtyModelContainer = _.first(dirtyModelsContainer),
                         foundModelIndex = self._findModelIndex(self.models, dirtyModelContainer.model),
                         model = foundModelIndex !== -1 ? self.models[foundModelIndex] : null,
-                        action = dirtyModelContainer.action,
-                        actionToStoreModification;
+                        action = dirtyModelContainer.action;
 
                     model = _.isNull(model) ? self.model.findOrCreate(dirtyModelContainer.model.attributes) : model;
                     if (!_.isNull(model)) {
-                        actionToStoreModification = _.contains(['change', 'add'], action) ? 'save' : 'destroy';
-                        result = { model: model, actionToStoreModification: actionToStoreModification };
+                        result = { model: model, action: action};
                     }
                 }
                 return result;
             }).compact().value();
-            /*var dirtymodelsCid = _.chain(this._dirtyModels).pluck('model').pluck('cid').unique().value();
-            var dirtyModels = _.zip()
-            dirtymodelsCid = _.compact(dirtymodelsCid);
-            dirtymodelsCid = _.unique(dirtymodelsCid);
-
-            dirtyModels = _.map(dirtymodelsCid, function (dirtyModelCid) {
-                var model = Backbone.Relational.store.find(self.model, dirtyModelCid)
-                var action = _.findWhere(this._dirtyModels, { model: { cid: dirtyModelCid } });
-                return ;
-            });*/
-            /*
-            clonedModels = _.pluck(self.models, 'clonedModelAttributes');
-            dirtyModels = _.map(this._dirtyModels, function (dirtyModelContainer) {
-                var foundDirtyModelIndex = self._findModelIndex(clonedModels, dirtyModelContainer.model),
-                    model,
-                    result;
-
-                if (foundDirtyModelIndex !== -1) {
-                    model = self.models[foundDirtyModelIndex];
-                } else if (!_.isUndefined(self.model) && !_.isNull(self.model)) {
-                    model = self.model.findOrCreate(dirtyModelContainer.model);
-                }
-                result = model && { model: model, action: dirtyModelContainer.action };
-
-                return result;
-            });
-            dirtyModels = _.compact(dirtyModels);*/
         }
         return dirtyModels;
     },
@@ -220,11 +182,31 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
     revert: function () {
         var dirtyModels = this.checkAndGetDirtyModels(),
             model,
-            isDirty;
+            isDirty,
+            addedModels = [],
+            removedModels = [];
 
         _.each(dirtyModels, function (dirtyModel) {
-            dirtyModel.revert();
+            switch (dirtyModel.action) {
+                case 'add':
+                    addedModels.push(dirtyModel.model);
+                    break;
+                case 'remove':
+                    removedModels.push(dirtyModel.model);
+                    break;
+                default:
+                    dirtyModel.model.revert();
+            }
         });
+
+        if (addedModels.length > 0) {
+            this.remove(addedModels);
+        }
+
+        if (removedModels.length > 0) {
+            this.add(removedModels);
+        }
+
         model = null;
         isDirty = false;
         this._dirtyModels = [];
