@@ -894,7 +894,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         var isDirty = false;
 
         if (model instanceof Suit.Model) {
-            if (model.isDirty || action === 'change') {
+            if (model.isDirty && action === 'change') {
                 this._handleAddChangeEvents(model, action);
             } else if (action === 'add') {
                 this._handleAddChangeEvents(model, action);
@@ -909,18 +909,22 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         var self = this,
             dirtyModelIndex = -1;
 
+
         _.find(this._dirtyModels, function (dirtyModelContainer, index) {
             var foundMatchingModel = !_.isUndefined(dirtyModelContainer) && !_.isUndefined(dirtyModelContainer.model);
 
             if (action === 'add') {
                 foundMatchingModel = foundMatchingModel && self._isMatchingModel(model, dirtyModelContainer.model);
+                
             } else {
                 foundMatchingModel = foundMatchingModel && dirtyModelContainer.action === action &&
                                      (dirtyModelContainer.model.cid === model.clonedModel.cid ||
                                      self._isMatchingModel(model, dirtyModelContainer.model));
+                
             }
 
             dirtyModelIndex = foundMatchingModel ? index : -1;
+            return foundMatchingModel;
         });
 
         if (dirtyModelIndex !== -1) {
@@ -930,22 +934,30 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         }
     },
     _handleRemoveEvent: function (model, action) {
+
         var anyMatch = false,
             self = this,
-            dirtyModelIndex = -1;
+            dirtyModelIndex = -1,
+            previousAction = '';
 
         _.filter(this._dirtyModels, function (dirtyModelContainer, index) {
             var foundMatchingModel = !_.isUndefined(dirtyModelContainer.model) &&
                                      self._isMatchingModel(model, dirtyModelContainer.model);
             anyMatch = foundMatchingModel || anyMatch;
             dirtyModelIndex = foundMatchingModel ? index : -1;
+            previousAction = dirtyModelContainer.action;
             return !foundMatchingModel;
         });
 
         if (!anyMatch) {
             this._dirtyModels.push({model: model.clonedModel, action: action});
         } else {
-            this._dirtyModels.splice(dirtyModelIndex, 1);
+            if (previousAction === 'add') {
+                this._dirtyModels.splice(dirtyModelIndex, 1);
+            } else if (previousAction === 'change') {
+                this._dirtyModels[dirtyModelIndex].action = 'remove';
+            }
+            
         }
     },
     _findModelIndex: function (knownModels, candidateModel) {
@@ -1015,23 +1027,24 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
 
         _.each(dirtyModels, function (dirtyModel) {
             switch (dirtyModel.action) {
+                case 'change':
+                    dirtyModel.model.revert();
+                    break;
                 case 'add':
                     addedModels.push(dirtyModel.model);
                     break;
                 case 'remove':
                     removedModels.push(dirtyModel.model);
                     break;
-                default:
-                    dirtyModel.model.revert();
             }
         });
 
         if (addedModels.length > 0) {
-            this.remove(addedModels);
+            this.remove(addedModels, {silent: true});
         }
 
         if (removedModels.length > 0) {
-            this.add(removedModels);
+            this.add(removedModels, {silent: true});
         }
 
         model = null;

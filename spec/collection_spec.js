@@ -123,21 +123,37 @@ describe('Suit Collection', function () {
         it('should set the isDirty flag to false when a new model has been added but then it was removed before saving it', function () {
             collection.add(model3);
             expect(collection.isDirty).toBeTruthy();
-            collection.remove(collection.models[2]);
+            collection.remove(model3);
             expect(collection.isDirty).toBeFalsy();
         });
 
         it('should set the isDirty flag to false when removing and adding back the models from a collection', function () {
+            
             collection.reset([model3, model1]);
             expect(collection.isDirty).toBeFalsy();
+            model3.set({name: 'change delete add'});
+            
 
-            collection.remove(collection.models[0]);
-            collection.remove(collection.models[1]);
+            collection.remove(model3);
+            collection.remove(model1);
             expect(collection.isDirty).toBeTruthy();
 
+            //revert model to original value
+            model3.revert();
             collection.add(model3);
+
             collection.add(model1);
             expect(collection.isDirty).toBeFalsy();
+        });
+
+        it('should set the isDirty flag when changing an existing model and then removing it', function () {
+            
+            collection.reset([model3]);
+            expect(collection.isDirty).toBeFalsy();
+            model3.set({name: 'testing 3 bla bla bla'});
+            expect(collection.isDirty).toBeTruthy();
+            collection.remove(model3);
+            expect(collection.isDirty).toBeTruthy();
         });
 
         it('should set the isDirty flag to true when a new model has been added, then changed and finally changed back to its original values', function () {
@@ -176,6 +192,7 @@ describe('Suit Collection', function () {
         });
 
         it('should revert the collection after adding and removing models', function () {
+            
             collection.reset([model1, model2]);
             expect(collection.isDirty).toBeFalsy();
 
@@ -202,6 +219,21 @@ describe('Suit Collection', function () {
             collection.revert();
             expect(collection.isDirty).toBeFalsy();
             expect(collection.length).toBe(1);
+        });
+
+        it('should revert the collection after changing and removing the model', function () {
+            collection.reset([model1]);
+            expect(collection.isDirty).toBeFalsy();
+
+            model1.set({name: 'reverting changed removed'});
+            expect(collection.isDirty).toBeTruthy();
+            collection.remove(model1);
+            expect(collection.isDirty).toBeTruthy();
+            collection.revert();
+            expect(collection.isDirty).toBeFalsy();
+            expect(collection.length).toBe(1);
+            expect(collection.models[0].get('name')).toBe('test 1');
+
         });
 
         it('should return zero dirty models if there has not been any action of modification before calling the function checkAndGetDirtyModels', function () {
