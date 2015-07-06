@@ -677,4 +677,60 @@ describe('Suit Model', function () {
         });
     });
 
+    describe('dirty checking', function () {
+
+        beforeEach(function () {
+            var Model;
+            Model = Suit.Model.extend({
+                initialize: function () {
+                    Suit.Model.prototype.initialize.apply(this);
+                },
+                url: '/api'
+            });
+            model = new Model({id: 111, name: 'test 1'});
+        });
+
+        afterEach(function () {
+            model.destroy();
+        });
+
+        it('should clone the attributes, except inherited attributes, when initiazing a new model', function () {
+            expect(model.clonedModel).toEqual({ cid: model.cid, attributes: {id: 111, name: 'test 1'} });
+        });
+
+        it('should clone the attributes, except inherited attributes ,when the sync event has been triggered', function () {
+            model.set({name: 'test 2'});
+            expect(model.clonedModel.attributes).toEqual({id: 111, name: 'test 1'});
+            model.trigger('sync');
+            expect(model.clonedModel.attributes).toEqual({id: 111, name: 'test 2'});
+        });
+
+        it('should set the isDirty flag to true when the change event has been triggered and there has been a real change', function () {
+            expect(model.isDirty).toBeFalsy();
+            model.set({name: 'test 2'});
+            expect(model.isDirty).toBeTruthy();
+        });
+
+        it('should set the isDirty flag to false when the change event has been triggered and there has not been a real change', function () {
+            expect(model.isDirty).toBeFalsy();
+            model.set({id: 112, name: 'test 2'});
+            model.set({id: '111', name: 'test 1'});
+            expect(model.isDirty).toBeFalsy();
+        });
+
+        it('should revert the model to the original attributes and values when calling revert on a model', function () {
+            model.set({id: 112, name: 'test 2'});
+            expect(model.attributes).toEqual({id: 112, name: 'test 2'});
+            expect(model.isDirty).toBeTruthy();
+            model.revert();
+            expect(model.attributes).toEqual({id: 111, name: 'test 1'});
+            expect(model.isDirty).toBeFalsy();
+        });
+
+        it('should set the isDirty flag to true when clearing a model', function () {
+            expect(model.isDirty).toBeFalsy();
+            model.clear();
+            expect(model.isDirty).toBeTruthy();
+        });
+    });
 });
