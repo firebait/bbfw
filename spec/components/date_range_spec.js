@@ -1,9 +1,13 @@
 'use strict';
 
 describe('Date range component', function () {
-    var view;
+    var view, tempDefer;
 
     beforeEach(function () {
+        tempDefer = _.defer;
+        _.defer = function (fn) {
+            fn();
+        };
         view = new Suit.View();
         // We need to make the template by hand as the components get initialized by the view.
         view.template = function () { return '<div class="date-range" data-dr-sequencial="true"> <div class="date-picker blue date-picker-start"> <a href="#" class="date-picker-trigger"><span class="icon">#</span></a> <input type="text" class="date-picker-date" placeholder="mm/dd/yyyy"></input> </div> <div class="date-picker blue date-picker-end"> <input type="text" class="date-picker-date" placeholder="mm/dd/yyyy"></input> </div> <div class="select-box"> <select> <option value="custom">Custom</option> <option value="today">Today</option> <option value="last_7_days">Last 7 Days</option> <option value="this_month">This Month</option> <option value="this_quarter">This Quarter</option> <option value="all">All Time</option> </select> <span class="icon">/</span> </div> </div>'; };

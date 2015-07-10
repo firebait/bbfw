@@ -3681,42 +3681,6 @@ Suit.Components.registerComponent('ToggleButton');
 
 'use strict';
 
-window.rivets.binders.tooltip = {
-    bind: function (el) {
-        var currentTarget = $(el);
-
-        var message = this.keypath;
-        var color = currentTarget.data('color');
-        var tooltip = $('#suit-tooltip');
-        
-        if (tooltip.length === 0) {
-            tooltip = $('<div id="suit-tooltip" class="tooltip ' + color + '"><div class="tooltip-content">' +  message + '</div><div class="tooltip-arrow"></div></div>');
-            $('body').append(tooltip);
-        }
-        
-        this.callback = function () {
-            tooltip.attr('class', 'tooltip ' + color);
-            tooltip.children('.tooltip-content').text(message);
-            tooltip.css({
-                top: currentTarget.offset().top - tooltip.height() - 12,
-                left: currentTarget.offset().left - 10,
-                'max-width': '250px'
-            }).show();
-        };
-        this.hideCallback = function () {
-            tooltip.hide();
-        };
-        currentTarget.on('mouseover', this.callback);
-        currentTarget.on('mouseout', this.hideCallback);
-    },
-    unbind: function (el) {
-        var currentTarget = $(el);
-        currentTarget.off('mouseover', this.callback);
-        currentTarget.off('mouseout', this.hideCallback);
-    }
-};
-'use strict';
-
 if (!_.has(Suit, 'Components')) {
     Suit.Components = {};
 }
@@ -4110,31 +4074,73 @@ _.extend(window.rivets.binders, Suit.Components.Binders);
     _.extend(window.rivets.formatters, _.clone(Suit.Helpers.Formatters));
 })();
 'use strict';
-(function () {
+(function (rivets) {
 
     var binders = {
 
         'class-*-unless': function (el, value) {
             return (!Boolean(value)) ? $(el).addClass(this.args[0]) : $(el).removeClass(this.args[0]);
+        },
+
+
+        'tooltip': {
+            bind: function (el) {
+                var currentTarget = $(el);
+
+                var message = this.keypath;
+                var color = currentTarget.data('color');
+                var tooltip = $('#suit-tooltip');
+
+                if (tooltip.length === 0) {
+                    tooltip = $('<div id="suit-tooltip" class="tooltip ' + color + '"><div class="tooltip-content">' +  message + '</div><div class="tooltip-arrow"></div></div>');
+                    $('body').append(tooltip);
+                }
+
+                this.callback = function () {
+                    tooltip.attr('class', 'tooltip ' + color);
+                    tooltip.children('.tooltip-content').text(message);
+                    tooltip.css({
+                        top: currentTarget.offset().top - tooltip.height() - 12,
+                        left: currentTarget.offset().left - 10,
+                        'max-width': '250px'
+                    }).show();
+                };
+                this.hideCallback = function () {
+                    tooltip.hide();
+                };
+                currentTarget.on('mouseover', this.callback);
+                currentTarget.on('mouseout', this.hideCallback);
+            },
+            unbind: function (el) {
+                var currentTarget = $(el);
+                currentTarget.off('mouseover', this.callback);
+                currentTarget.off('mouseout', this.hideCallback);
+            }
         }
 
     };
-    _.extend(window.rivets.binders, binders);
+    _.extend(rivets.binders, binders);
 
-})();
+})(window.rivets);
+
 'use strict';
+
+Suit = Suit || {};
+Suit.appStart = function () {
+    // Prepare the body.
+    $('body').prepend(App.mainView.render().el);
+
+    // Start routes.
+    App.mainRouter = new App.Routers.Main();
+    _.each(App.Routers, function (value, key) {
+        new App.Routers[key]();
+    });
+    Backbone.history.start({pushState: false});
+};
 
 // Start application.
 if (_.isUndefined(window.jasmine)) {
     $(function () {
-        // Prepare the body.
-        $('body').prepend(App.mainView.render().el);
-
-        // Start routes.
-        App.mainRouter = new App.Routers.Main();
-        _.each(App.Routers, function (value, key) {
-            new App.Routers[key]();
-        });
-        Backbone.history.start({pushState: false});
+        Suit.appStart();
     });
 }
