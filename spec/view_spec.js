@@ -1,8 +1,9 @@
+/* global spyOn */
 'use strict';
 
 describe('Suit View', function () {
 
-    var view, parent, model, server, spy;
+    var view, parent, model, server;
 
     beforeEach(function () {
         model = new Suit.Model({});
@@ -197,18 +198,22 @@ describe('Suit View', function () {
         it('should remove and add error class from input field on request and response respectively', function () {
             model.url = 'someurl';
             view = new Suit.View({id: 'view', model: model});
-            view.template = function () { return '<input type="text" name="name" class="error"/>'; };
+            view.template = function () { return '<input type="text" name="name" class="error"/><div class="tooltip">error</div>'; };
             server = sinon.fakeServer.create();
             server.respondWith('POST', view.model.url, function (xhr) {
                 xhr.respond(422, { 'Content-Type': 'application/json' }, JSON.stringify(
                   {'name': 'input field can not be blank', 'name2': 'name2 is wrong'}));
             });
             view.render();
+            view.errors = [view.$el.find('.tooltip')];
             //check it contains errors initially
             expect(view.$el.find('[name="name"].error').length).toEqual(1);
+            expect(view.errors.length).toBe(1);
             view.model.save();
             //should remove the erorr class upon request
             expect(view.$el.find('[name="name"].error').length).toEqual(0);
+            expect(view.errors.length).toBe(0);
+            expect(view.$el.find('.tooltip').length).toBe(0);
             server.respond();//server errors
             //should add the class error
             expect(view.$el.find('[name="name"].error').length).toEqual(1);
@@ -237,7 +242,18 @@ describe('Suit View', function () {
     });
 
     describe('validation', function () {
-        var CustomModel;
+        var CustomModel, defer;
+
+        beforeEach(function () {
+            defer = _.defer;
+            _.defer = function (fn) {
+                fn();
+            };
+        });
+
+        afterEach(function () {
+            _.defer = defer;
+        });
 
         it('should respond to validation of model', function () {
             CustomModel = Suit.Model.extend({
@@ -254,10 +270,9 @@ describe('Suit View', function () {
             model = new CustomModel({});
             view = new Suit.View({id: 'view', model: model});
             model.set('name', 'test');
-            spy = sinon.spy(view, 'showVisualError');
+            spyOn(view, 'showVisualError').andCallThrough();
             model.validate();
-            // expect(spy).toHaveBeenCalled();
-            console.info('TODO: Test View validation');
+            expect(view.showVisualError).toHaveBeenCalled();
         });
 
     });
@@ -275,6 +290,25 @@ describe('Suit View', function () {
             expect(view.find('[data-permissions]').length).toBe(0);
         });
 
+    });
+
+    describe('Serialize Object', function () {
+        it('serialize all inputs from a form or element', function () {
+            var view = new Suit.View({});
+            view.template =  function () {
+                return '<form>' +
+                            '<input name="multi" value="1" type="checkbox" checked/>' +
+                            '<input name="multi" value="2" type="checkbox" checked/>' +
+                            '<input name="name" value="test" type="text"/>' +
+                        '</form>';
+            };
+            view.render();
+
+
+            var obj = view.serializeObject();
+            expect(JSON.stringify(obj)).toBe('{"multi":["1","2"],"name":"test"}');
+
+        });
     });
 
 });
