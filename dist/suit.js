@@ -2356,6 +2356,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.staggerLabels           = this.options.staggerLabels || false;
         this.transitionDuration      = this.options.transitionDuration || 350;
         this.showValues              = this.options.showValues || false;
+        this.valueFormat             = this.options.valueFormat || 'abbreviate';
         this.tooltips                = this.options.tooltips || false;
         this.xAxisFormat             = this.options.xAxisFormat || '';
         this.yAxisFormat             = this.options.yAxisFormat || 'abbreviate';
@@ -2375,6 +2376,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.interactive             = _.isUndefined(this.options.interactive) ? true : this.options.interactive;
         this.rightAlignYAxis         = this.options.rightAlignYAxis || false;
         this.xAttr                   = this.options.xAttr || 'timestamp';
+        this.stacked                 = this.stacked || false;
         this.source                  = this.options.source || [];
         this.data                    = [];
         this.tooltipsIncludeSmallBars   = _.isUndefined(this.options.tooltipsIncludeSmallBars) ? false : this.options.tooltipsIncludeSmallBars;
@@ -2538,6 +2540,17 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         } else if (this.chartType === 'bar') {
             chart = nv.models.discreteBarChart();
             chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
+            chart.showValues(this.showValues);
+            chart.valueFormat(this.getFormatter(this.valueFormat));
+        }
+        else if (this.chartType === 'horizontalbar') {
+            chart = nv.models.multiBarHorizontalChart();
+            chart.showYAxis(this.showYAxis).showXAxis(this.showXAxis);
+            chart.showControls(this.showControls);
+            chart.showValues(this.showValues);
+            chart.valueFormat(this.getFormatter(this.valueFormat));
+            chart.stacked(this.stacked);
+            chart.showLegend(this.showLegend);
         }
 
         if (this.isPie) {

@@ -332,6 +332,55 @@ describe('Suit Chart Component', function () {
         });
     });
 
+    describe('horizontalbar chart', function () {
+
+        var flushAllD3Transitions = function () {
+            var now = Date.now;
+            Date.now = function () { return Infinity; };
+            d3.timer.flush();
+            Date.now = now;
+        };
+
+        beforeEach(function () {
+            html = '<div><div id="testChart" suit-component-chart data-source="collection" style="width: 270px;height: 206px" data-chart-type="horizontalbar" data-tooltips-include-small-bars="true" data-x-axis-format="datetime" data-theme="dark" data-tooltips="true"></div></div>';
+            el = $(html)[0];
+            collection = new Suit.Collection([
+                {timestamp: moment().add(0, 'days'), ctr: 1500, vcr: 1500, t: 1500},
+                {timestamp: moment().add(1, 'days'), ctr: 2500, vcr: 2500, t: 2500}
+            ]);
+            view = new Suit.View({el: el, collection: collection});
+            view.render();
+            chartComponent = view.components.testChart;
+        });
+
+        it('should massage source data to conform to nvd3\'s requirements', function () {
+            var t = [moment().add(0, 'days'), moment().add(1, 'days'), moment().add(2, 'days'), moment().add(3, 'days')];
+            collection = new Suit.Collection([
+                {timestamp: t[0], ctr: 1500, vcr: 1500, t: 1500},
+                {timestamp: t[1], ctr: 2500, vcr: 2500, t: 2500}
+            ]);
+            var expectedOutput = [ { values : [ { x : t[0].toDate().getTime() / 1000, y : 1500 }, { x : t[1].toDate().getTime() / 1000, y : 2500 } ], key : 'ctr' }, { values : [ { x : t[0].toDate().getTime() / 1000, y : 1500 }, { x : t[1].toDate().getTime() / 1000, y : 2500 } ], key : 'vcr' }, { values : [ { x : t[0].toDate().getTime() / 1000, y : 1500 }, { x : t[1].toDate().getTime() / 1000, y : 2500 } ], key : 't' } ];
+            expect(chartComponent.chartData(collection)).toEqual(expectedOutput);
+            collection = [
+                {timestamp: t[0], ctr: 1500, vcr: 1500, t: 1500},
+                {timestamp: t[1], ctr: 2500, vcr: 2500, t: 2500}
+            ];
+            expectedOutput = [ { values : [ { x : t[0].toDate().getTime() / 1000, y : 1500 }, { x : t[1].toDate().getTime() / 1000, y : 2500 } ], key : 'ctr' }, { values : [ { x : t[0].toDate().getTime() / 1000, y : 1500 }, { x : t[1].toDate().getTime() / 1000, y : 2500 } ], key : 'vcr' }, { values : [ { x : t[0].toDate().getTime() / 1000, y : 1500 }, { x : t[1].toDate().getTime() / 1000, y : 2500 } ], key : 't' } ];
+            expect(chartComponent.chartData(collection)).toEqual(expectedOutput);
+        });
+
+        it('should render a overlay-bar when is initialized the attribute data-tooltips-include-small-bars="true"', function () {
+            flushAllD3Transitions();
+
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(1) rect').attr('width')).toBe('132');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(1) rect').attr('height')).toBe('18');
+
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) rect').attr('width')).toBe('220');
+            expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) rect').attr('height')).toBe('18');
+
+        });
+    });
+
     describe('pie chart', function () {
         beforeEach(function () {
             model = new Suit.Model({vcr: 1500, ctr: 1500, t: 1500});
