@@ -707,8 +707,8 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
     },
     /** Clones the model attributes */
     _clonedModelAttributes: function (model) {
-        this.isDirty = false;
         this.clonedModel = this._getFilteredAttributes(model);
+        this._setAndTriggerDirtyModel(false);
     },
     /** Gets the attributes except the ones inherited through a relation */
     _getFilteredAttributes: function (model) {
