@@ -698,11 +698,15 @@ describe('Suit Model', function () {
             expect(model.clonedModel).toEqual({ cid: model.cid, attributes: {id: 111, name: 'test 1'} });
         });
 
-        it('should clone the attributes, except inherited attributes ,when the sync event has been triggered', function () {
+        it('should clone the attributes, except inherited attributes, set the isDirty flag to false and trigger the dirtyModel event,when the sync event has been triggered', function () {
             model.set({name: 'test 2'});
+            var dirtyModelCallback = sinon.spy(function () { });
+            model.listenToOnce(model, 'dirtyModel', dirtyModelCallback);
             expect(model.clonedModel.attributes).toEqual({id: 111, name: 'test 1'});
             model.trigger('sync');
             expect(model.clonedModel.attributes).toEqual({id: 111, name: 'test 2'});
+            expect(model.isDirty).toBeFalsy();
+            expect(dirtyModelCallback).toHaveBeenCalledWith(model, false);
         });
 
         it('should set the isDirty flag to true when the change event has been triggered and there has been a real change', function () {
