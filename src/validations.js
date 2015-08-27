@@ -104,11 +104,11 @@ Suit.Validation = {
         numeric: function (attr, val, options) {
             // Only validates if value is present
             if (val || val === 0) {
-                val = parseFloat(val);
-                if (!_.isNumber(val) || _.isNaN(val)) {
+                if (_.isNaN(+val)) {
                     return this.validatorMessages.numeric
                         .replace('{attr}', _.str.capitalize(attr));
                 } else if (!_.isUndefined(options)) {
+                    val = parseFloat(val);
                     if (!_.isUndefined(options.range)) {
                         if (options.rangeInclusive && (val < options.range[0] || val > options.range[1])) {
                             return 'The ' + attr + ' is not in the range of ' + options.range[0] + ' and ' + options.range[1] + ' inclusive.';
