@@ -515,6 +515,13 @@ describe('Suit Model', function () {
 
                 model.set('name', 123);
                 expect(model.isValid()).toBe(true);
+
+                model.set('name', '123');
+                expect(model.isValid()).toBeTruthy();
+
+                model.set('name', '123abc');
+                expect(model.isValid()).toBeFalsy();
+                expect(model.validate().name[0]).toBe('Name value must be numeric.');
             });
 
         });
