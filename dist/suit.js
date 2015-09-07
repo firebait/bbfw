@@ -2380,6 +2380,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.stacked                 = this.stacked || false;
         this.source                  = this.options.source || [];
         this.data                    = [];
+        this.tooltipContent          = null;
         this.tooltipsIncludeSmallBars   = _.isUndefined(this.options.tooltipsIncludeSmallBars) ? false : this.options.tooltipsIncludeSmallBars;
 
         if (this.source instanceof Suit.Collection) {
@@ -2583,6 +2584,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             } else if (this.maxY !== 'auto') {
                 chart.forceY([minMax.y.min, this.maxY]);
             }
+        }
+
+        if (!_.isNull(this.tooltipContent) && _.isFunction(this.tooltipContent)) {
+            chart.interactiveLayer.tooltip.contentGenerator(this.tooltipContent);
         }
 
         chart.margin(this.margin)
