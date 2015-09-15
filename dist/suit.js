@@ -725,12 +725,20 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
     },
     /** Performs dirty checking of the model */
     _dirtyCheck: function () {
-        var isDirty = !this._isMatchingModel(this.clonedModel.attributes, this.attributes);
+        var isDirty = !this._isMatchingModel(this.clonedModel.attributes, this);
         return isDirty;
     },
-    _isMatchingModel: function (knownModel, candidateModel) {
-        var isMatchingModel = false;
-        if (!_.isUndefined(knownModel) && !_.isUndefined(candidateModel)) {
+    /** Determines if the candidate model matches the known model */
+    _isMatchingModel: function (knownModel, candidateModelIns) {
+        var isMatchingModel = false,
+            candidateModel,
+            candidateModelInheritedAttributes;
+
+        if (!_.isUndefined(knownModel) && !_.isUndefined(candidateModelIns)) {
+            candidateModel = candidateModelIns.attributes;
+            candidateModelInheritedAttributes = _.pluck(candidateModelIns.getRelations(), 'key');
+
+            //Compare the attributes from the known model with the candidate model
             for (var attributeName in knownModel) {
                 if (_.isUndefined(candidateModel[attributeName])) {
                     isMatchingModel = false;
@@ -744,24 +752,42 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
                     break;
                 }
             }
+            //Compare the attributes, except the inherited ones, from the candidate model with the known model, if necessary
+            if (isMatchingModel) {
+                var candidateModelPlainAttributes = _.difference(_.keys(candidateModel), candidateModelInheritedAttributes);
+                isMatchingModel = _.every(candidateModelPlainAttributes, function (attributeName) {
+                    return !_.isUndefined(knownModel[attributeName]);
+                });
+            }
         }
         return isMatchingModel;
     },
     /** Revert the model to its original attributes and values */
     revert: function () {
         var originalModel = this.clonedModel.attributes,
-            currentModel = this.attributes,
+            currentModel = this,
+            inheritedAttributes = {},
+            modelRelations = this.getRelations(),
             isDirty;
 
-        _.each(currentModel, function (attributeValue, attributeName) {
-            if (!_.has(originalModel, attributeName)) {
-                originalModel[attributeName] = attributeValue;
-            }
+        _.each(modelRelations, function (modelRelation) {
+            inheritedAttributes[modelRelation.key] = currentModel.attributes[modelRelation.key];
         });
 
-        this.attributes = originalModel;
+        this.attributes = _.clone(originalModel);
+        _.extend(this.attributes, inheritedAttributes);
+
         isDirty = false;
         this._setAndTriggerDirtyModel(isDirty);
+    },
+    /** Add attribute to initial state and set it to the current model
+    */
+    addAttrToInitialState: function (key, val, options) {
+        if (_.isNull(key) || _.isUndefined(key) || _.isEmpty(_.str.trim(key))) {
+            return;
+        }
+        this.clonedModel.attributes[key] = val;
+        this.set(key, val, options);
     },
     /** Values to override with date/time values */
     dateAttrs: [],
