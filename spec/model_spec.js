@@ -729,19 +729,78 @@ describe('Suit Model', function () {
             expect(model.isDirty).toBeFalsy();
         });
 
-        it('should revert the model to the original attributes and values when calling revert on a model', function () {
-            model.set({id: 112, name: 'test 2'});
-            expect(model.attributes).toEqual({id: 112, name: 'test 2'});
-            expect(model.isDirty).toBeTruthy();
-            model.revert();
-            expect(model.attributes).toEqual({id: 111, name: 'test 1'});
+        it('should revert the model to the original attributes, values and relations when calling revert on a model', function () {
+            var Keyword = Suit.Model.extend({
+                initialize: function () {
+                    Suit.Model.prototype.initialize.apply(this);
+                },
+                url: '/api'
+            });
+
+            var Label = Suit.Model.extend({
+                initialize: function () {
+                    Suit.Model.prototype.initialize.apply(this);
+                },
+                url: '/api',
+                relations: [
+                    {
+                        type: Backbone.HasMany,
+                        key: 'keywords',
+                        relatedModel: Keyword,
+                        reverseRelation: {
+                            key: 'label'
+                        }
+                    }
+                ]
+            });
+
+            var label1 = new Label({name: 'label 1'});
+            var keyword1 = new Keyword({name: 'keyword 1', label: label1});
+
+            keyword1.set('name', 'Keyword One');
+            expect(keyword1.isDirty).toBeTruthy();
+            expect(keyword1.attributes).toEqual({name: 'Keyword One', label: label1});
+
+            keyword1.revert();
+            expect(keyword1.isDirty).toBeFalsy();
+            expect(keyword1.attributes).toEqual({name: 'keyword 1', label: label1});
+        });
+
+        it('should revert the model to the original attributes, including those that were added through the addAttrToInitialState function, when calling revert on a model', function () {
+            model.addAttrToInitialState('anotherAttribute', 'testing');
             expect(model.isDirty).toBeFalsy();
+            expect(model.attributes).toEqual({id: 111, name: 'test 1', anotherAttribute: 'testing'});
+
+            model.set('anotherAttribute', 'TESTING');
+            expect(model.isDirty).toBeTruthy();
+            expect(model.attributes).toEqual({id: 111, name: 'test 1', anotherAttribute: 'TESTING'});
+
+            model.revert();
+            expect(model.isDirty).toBeFalsy();
+            expect(model.attributes).toEqual({id: 111, name: 'test 1', anotherAttribute: 'testing'});
+        });
+
+        it('should revert the model to the original attributes, removing those that were added through the set function, when calling revert on a model', function () {
+            model.set('anotherAttribute', 'testing');
+            expect(model.isDirty).toBeTruthy();
+            expect(model.attributes).toEqual({id: 111, name: 'test 1', anotherAttribute: 'testing'});
+
+            model.revert();
+            expect(model.isDirty).toBeFalsy();
+            expect(model.attributes).toEqual({id: 111, name: 'test 1'});
         });
 
         it('should set the isDirty flag to true when clearing a model', function () {
             expect(model.isDirty).toBeFalsy();
             model.clear();
             expect(model.isDirty).toBeTruthy();
+        });
+
+        it('should add an attribute to initial state and set it to the current model when calling the addAttrToInitialState function', function () {
+            expect(model.isDirty).toBeFalsy();
+            model.addAttrToInitialState('anotherAttribute', 'testing');
+            expect(model.isDirty).toBeFalsy();
+            expect(model.attributes).toEqual({id: 111, name: 'test 1', anotherAttribute: 'testing'});
         });
     });
 });
