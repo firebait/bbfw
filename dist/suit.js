@@ -3753,16 +3753,17 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
         Suit.Component.prototype.initialize.apply(this, [options]);
         // Let's initialize all components and hook up all the events.
         var el = this.$el;
-        var url = el.attr('data-url');
-        var dataKey =  el.attr('data-key') || 'label';
-        var dataLimit = el.attr('data-limit') || 10;
-        var filterLang = _.isUndefined(el.attr('data-filter-lang')) ? false : el.attr('data-filter-lang');
+        var url = el.data('url');
+        var dataKey =  el.data('key') || 'label';
+        var dataLimit = el.data('limit') || 10;
+        var dataDisableEnter = el.data('disable-enter') || false;
+        var filterLang = el.data('filter-lang') || false;
         var local = this.options.local || undefined;
         var self = this;
 
         //query parameter
-        if (el.attr('data-param')) {
-            var queryString = el.attr('data-param') + '=%QUERY', //%QUERY is used to replace the value of the query.
+        if (el.data('param')) {
+            var queryString = el.data('param') + '=%QUERY', //%QUERY is used to replace the value of the query.
             urlArray = url.split('?');
             url = urlArray[0];
             if (urlArray[1]) {
@@ -3811,10 +3812,14 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
 
 
         $('#' + this.cid).keypress(function (e) {
-            if (e.which === 13) {//enter
+            if (e.which === 13) {// enter
                 // var tab = $.Event('keydown');
                 // tab.keyCode = tab.which = 9; // 9 == tab
-                $(this).trigger('typeahead:selected');
+                if (dataDisableEnter && !_.isEmpty($(this).val())) {
+                    return false;
+                } else {
+                    $(this).trigger('typeahead:selected');
+                }
             }
         });
     }
