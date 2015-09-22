@@ -32,6 +32,7 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
         var dataLimit = el.data('limit') || 10;
         var dataDisableEnter = el.data('disable-enter') || false;
         var filterLang = el.data('filter-lang') || false;
+        var globalFilters = el.data('global-filters') ? _.map(el.data('global-filters').split(','), function (n) { return +n; }) : [];
         var local = this.options.local || undefined;
         var self = this;
 
@@ -67,6 +68,12 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
                             return _.contains(App.Models.Label.languageArray, item.id);
                         });
                     }
+                    if (globalFilters) {
+                        parsedResponse = _.reject(parsedResponse, function (item) {
+                            return _.contains(globalFilters, item.id);
+                        });
+                    }
+
                     return parsedResponse;
                 }
             },
