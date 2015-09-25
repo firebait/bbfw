@@ -117,17 +117,39 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
             currentModel = this,
             inheritedAttributes = {},
             modelRelations = this.getRelations(),
+            changedAttributes = [],
             isDirty;
 
+        //Copy inherited attributes
         _.each(modelRelations, function (modelRelation) {
             inheritedAttributes[modelRelation.key] = currentModel.attributes[modelRelation.key];
         });
 
+        //Get a list of the names of the changed attributes
+        _.each(currentModel.attributes, function (attributeValue, attributeName) {
+            if (_.has(originalModel, attributeName)) {
+                if (attributeValue !== originalModel[attributeName]) {
+                    changedAttributes.push(attributeName);
+                }
+            }
+        });
+
+        //Set the original attributes and add the original inherited attributes
         this.attributes = _.clone(originalModel);
         _.extend(this.attributes, inheritedAttributes);
 
+        //Trigger specific changed attribute event and the general change event
+        _.each(changedAttributes, function (changedAttribute) {
+            currentModel.trigger('change:' + changedAttribute);
+        });
+        if (!_.isEmpty(changedAttributes)) {
+            this.trigger('change');
+        }
+
+        //Set isDirty to false and call the trigger dirty model event
         isDirty = false;
         this._setAndTriggerDirtyModel(isDirty);
+
     },
     /** Add attribute to initial state and set it to the current model
     */
