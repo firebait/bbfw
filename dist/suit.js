@@ -2425,7 +2425,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.interactive             = _.isUndefined(this.options.interactive) ? true : this.options.interactive;
         this.rightAlignYAxis         = this.options.rightAlignYAxis || false;
         this.xAttr                   = this.options.xAttr || 'timestamp';
-        this.stacked                 = this.stacked || false;
+        this.stacked                 = this.options.stacked || false;
         this.source                  = this.options.source || [];
         this.data                    = [];
         this.tooltipContent          = null;
@@ -2635,7 +2635,15 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
 
         if (!_.isNull(this.tooltipContent) && _.isFunction(this.tooltipContent)) {
-            chart.interactiveLayer.tooltip.contentGenerator(this.tooltipContent);
+            if (this.chartType === 'line' || this.chartType === 'stackedarea') {
+                chart.interactiveLayer.tooltip.contentGenerator(this.tooltipContent);
+            }
+            else if (this.chartType === 'bar') {
+                chart.tooltipContent(this.tooltipContent);
+            }
+            else if (this.chartType === 'horizontalbar') {
+                chart.tooltip(this.tooltipContent);
+            }
         }
 
         chart.margin(this.margin)
