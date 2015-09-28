@@ -790,6 +790,26 @@ describe('Suit Model', function () {
             expect(model.attributes).toEqual({id: 111, name: 'test 1'});
         });
 
+        it('should trigger the change:attribute and change events after calling the revert function and at least one attribute was actually reverted to its original state', function () {
+            var listenerSpy = sinon.spy();
+            model.set('name', 'Test 2');
+            expect(model.isDirty).toBeTruthy();
+            model.listenTo(model, 'change:name', listenerSpy);
+            model.listenTo(model, 'change', listenerSpy);
+            model.revert();
+            expect(listenerSpy.callCount).toBe(2);
+        });
+
+        it('should not trigger the change:attribute or change events after calling the revert function when no attribute was reverted to its original state', function () {
+            var listenerSpy = sinon.spy();
+            model.set('name', 'test 1');
+            expect(model.isDirty).toBeFalsy();
+            model.listenTo(model, 'change:name', listenerSpy);
+            model.listenTo(model, 'change', listenerSpy);
+            model.revert();
+            expect(listenerSpy.callCount).toBe(0);
+        });
+
         it('should set the isDirty flag to true when clearing a model', function () {
             expect(model.isDirty).toBeFalsy();
             model.clear();
