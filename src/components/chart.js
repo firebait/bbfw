@@ -77,6 +77,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.xAttr                   = this.options.xAttr || 'timestamp';
         this.stacked                 = this.options.stacked || false;
         this.source                  = this.options.source || [];
+        this.barHeight               = this.options.barHeight || 'auto';
         this.data                    = [];
         this.tooltipContent          = null;
         this.tooltipsIncludeSmallBars   = _.isUndefined(this.options.tooltipsIncludeSmallBars) ? false : this.options.tooltipsIncludeSmallBars;
@@ -323,11 +324,30 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             $(m[0]).css({transform: 'translate(45px, 0)'});
             $(m[1]).css({transform: 'translate(' + (this.$el.width() - (this.margin.left + 50)) + 'px, 0)'});
         }
-        if (this.chartType === 'bar' && this.tooltipsIncludeSmallBars) {
-            // let's find max height between the bars
-            var maxHeightBar = this.chart.height() - this.chart.margin().top - this.chart.margin().bottom;
 
-            var self = this;
+        // let's find max height between the bars
+        var chartHeight = this.chart.height() - this.chart.margin().top - this.chart.margin().bottom;
+        var self = this;
+        if (this.chartType === 'horizontalbar' && this.barHeight !== 'auto') {
+            this.svg.transition()
+                .duration(250)
+                .each('end', function () {
+                    self.svg.selectAll('.nv-bar').each(function () {
+                        var bar = d3.select(this),
+                            height = parseInt(self.barHeight),
+                            rect = bar.select('rect'),
+                            prevHeight = rect.attr('height'),
+                            deltaHeight = Math.abs(prevHeight - height),
+                            y = rect.attr('y') + deltaHeight / 2;
+
+                        rect.attr('y', y)
+                            .attr('height', height);
+                    });
+                });
+        }
+
+        if (this.chartType === 'bar' && this.tooltipsIncludeSmallBars) {
+
             this.svg.transition()
                 .duration(250)
                 .each('end', function () {
@@ -343,8 +363,8 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
                             .attr('class', 'overlay-bar')
                             .style('fill', 'transparent')
                             .attr('width', width)
-                            .attr('height', Math.abs(maxHeightBar - height))
-                            .attr('y', height - maxHeightBar);
+                            .attr('height', Math.abs(chartHeight - height))
+                            .attr('y', height - chartHeight);
                     });
                 });
         }
