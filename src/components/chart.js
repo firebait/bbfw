@@ -78,6 +78,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.stacked                 = this.options.stacked || false;
         this.source                  = this.options.source || [];
         this.barHeight               = this.options.barHeight || 'auto';
+        this.barWidth               = this.options.barWidth || 'auto';
         this.data                    = [];
         this.tooltipContent          = null;
         this.tooltipsIncludeSmallBars   = _.isUndefined(this.options.tooltipsIncludeSmallBars) ? false : this.options.tooltipsIncludeSmallBars;
@@ -346,7 +347,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
                 });
         }
 
-        if (this.chartType === 'bar' && this.tooltipsIncludeSmallBars) {
+        if ((this.chartType === 'bar' && this.tooltipsIncludeSmallBars) || (this.chartType === 'bar')) {
 
             this.svg.transition()
                 .duration(250)
@@ -355,18 +356,34 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
                     // user experience then the user move the mouse
                     // over a bar with low result on the axis x.
                     self.svg.selectAll('.nv-bar').each(function () {
-                        var bar = d3.select(this);
-                        var width = bar.select('rect').attr('width');
-                        var height = bar.select('rect').attr('height');
+                        var bar = d3.select(this),
+                            rect = bar.select('rect'),
+                            width = parseInt(self.barWidth),
+                            prevWidth = rect.attr('width'),
+                            height = rect.attr('height'),
+                            deltaWidth = Math.abs(prevWidth - width),
+                            x = rect.attr('x') ? (0 + deltaWidth / 2) : (parseInt(rect.attr('x') + deltaWidth / 2));
 
-                        bar.append('rect')
+                        if (self.barWidth === 'auto') {
+                            width = prevWidth;
+                        } else {
+                            rect.attr('class', 'overlay-bar')
+                                .attr('width', width)
+                                .attr('x', x);
+                        }
+                        if (self.tooltipsIncludeSmallBars) {
+                            bar.append('rect')
                             .attr('class', 'overlay-bar')
                             .style('fill', 'transparent')
                             .attr('width', width)
                             .attr('height', Math.abs(chartHeight - height))
                             .attr('y', height - chartHeight);
+                        }
+
+
                     });
                 });
+
         }
 
         return this.chart;
