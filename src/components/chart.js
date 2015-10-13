@@ -77,6 +77,8 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.xAttr                   = this.options.xAttr || 'timestamp';
         this.stacked                 = this.options.stacked || false;
         this.source                  = this.options.source || [];
+        this.barHeight               = this.options.barHeight || 'auto';
+        this.barWidth               = this.options.barWidth || 'auto';
         this.data                    = [];
         this.tooltipContent          = null;
         this.tooltipsIncludeSmallBars   = _.isUndefined(this.options.tooltipsIncludeSmallBars) ? false : this.options.tooltipsIncludeSmallBars;
@@ -323,11 +325,30 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
             $(m[0]).css({transform: 'translate(45px, 0)'});
             $(m[1]).css({transform: 'translate(' + (this.$el.width() - (this.margin.left + 50)) + 'px, 0)'});
         }
-        if (this.chartType === 'bar' && this.tooltipsIncludeSmallBars) {
-            // let's find max height between the bars
-            var maxHeightBar = this.chart.height() - this.chart.margin().top - this.chart.margin().bottom;
 
-            var self = this;
+        // let's find max height between the bars
+        var chartHeight = this.chart.height() - this.chart.margin().top - this.chart.margin().bottom;
+        var self = this;
+        if (this.chartType === 'horizontalbar' && this.barHeight !== 'auto') {
+            this.svg.transition()
+                .duration(250)
+                .each('end', function () {
+                    self.svg.selectAll('.nv-bar').each(function () {
+                        var bar = d3.select(this),
+                            height = parseInt(self.barHeight),
+                            rect = bar.select('rect'),
+                            prevHeight = rect.attr('height'),
+                            deltaHeight = Math.abs(prevHeight - height),
+                            y = rect.attr('y') + deltaHeight / 2;
+
+                        rect.attr('y', y)
+                            .attr('height', height);
+                    });
+                });
+        }
+
+        if ((this.chartType === 'bar' && this.tooltipsIncludeSmallBars) || (this.chartType === 'bar')) {
+
             this.svg.transition()
                 .duration(250)
                 .each('end', function () {
@@ -335,18 +356,34 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
                     // user experience then the user move the mouse
                     // over a bar with low result on the axis x.
                     self.svg.selectAll('.nv-bar').each(function () {
-                        var bar = d3.select(this);
-                        var width = bar.select('rect').attr('width');
-                        var height = bar.select('rect').attr('height');
+                        var bar = d3.select(this),
+                            rect = bar.select('rect'),
+                            width = parseInt(self.barWidth),
+                            prevWidth = rect.attr('width'),
+                            height = rect.attr('height'),
+                            deltaWidth = Math.abs(prevWidth - width),
+                            x = rect.attr('x') ? (0 + deltaWidth / 2) : (parseInt(rect.attr('x') + deltaWidth / 2));
 
-                        bar.append('rect')
+                        if (self.barWidth === 'auto') {
+                            width = prevWidth;
+                        } else {
+                            rect.attr('class', 'overlay-bar')
+                                .attr('width', width)
+                                .attr('x', x);
+                        }
+                        if (self.tooltipsIncludeSmallBars) {
+                            bar.append('rect')
                             .attr('class', 'overlay-bar')
                             .style('fill', 'transparent')
                             .attr('width', width)
-                            .attr('height', Math.abs(maxHeightBar - height))
-                            .attr('y', height - maxHeightBar);
+                            .attr('height', Math.abs(chartHeight - height))
+                            .attr('y', height - chartHeight);
+                        }
+
+
                     });
                 });
+
         }
 
         return this.chart;
