@@ -206,6 +206,38 @@ describe('Suit Collection', function () {
             expect(collection.models[1].get('name')).toBe('test 2');
         });
 
+        it('should revert the collection after removing added models', function () {
+            collection.reset([model1]);
+            expect(collection.isDirty).toBeFalsy();
+
+            collection.add(model2);
+            collection.add(model3);
+            collection.remove(model2);
+            expect(collection.isDirty).toBeTruthy();
+
+            collection.revert();
+            expect(collection.isDirty).toBeFalsy();
+            expect(collection.length).toBe(1);
+            expect(collection.models[0].get('name')).toBe('test 1');
+        });
+
+        it('should revert the collection after adding removed models', function () {
+            collection.reset([model1, model2, model3]);
+            expect(collection.isDirty).toBeFalsy();
+
+            collection.remove(model2);
+            collection.remove(model3);
+            collection.add(model2);
+            expect(collection.isDirty).toBeTruthy();
+
+            collection.revert();
+            expect(collection.isDirty).toBeFalsy();
+            expect(collection.length).toBe(3);
+            expect(collection.models[0].get('name')).toBe('test 1');
+            expect(collection.models[1].get('name')).toBe('test 2');
+            expect(collection.models[2].get('name')).toBe('test 3');
+        });
+
         it('should revert the collection after adding and changed the added model', function () {
             collection.reset([model1]);
             expect(collection.isDirty).toBeFalsy();

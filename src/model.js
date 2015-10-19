@@ -140,10 +140,10 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
 
         //Trigger specific changed attribute event and the general change event
         _.each(changedAttributes, function (changedAttribute) {
-            currentModel.trigger('change:' + changedAttribute);
+            currentModel.trigger('change:' + changedAttribute, currentModel);
         });
         if (!_.isEmpty(changedAttributes)) {
-            this.trigger('change');
+            this.trigger('change', this);
         }
 
         //Set isDirty to false and call the trigger dirty model event

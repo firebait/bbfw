@@ -791,10 +791,10 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
 
         //Trigger specific changed attribute event and the general change event
         _.each(changedAttributes, function (changedAttribute) {
-            currentModel.trigger('change:' + changedAttribute);
+            currentModel.trigger('change:' + changedAttribute, currentModel);
         });
         if (!_.isEmpty(changedAttributes)) {
-            this.trigger('change');
+            this.trigger('change', this);
         }
 
         //Set isDirty to false and call the trigger dirty model event
@@ -972,14 +972,15 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
                 
             }
 
-            dirtyModelIndex = foundMatchingModel ? index : -1;
+            dirtyModelIndex = foundMatchingModel ? index : dirtyModelIndex;
             return foundMatchingModel;
         });
 
-        if (dirtyModelIndex !== -1) {
-            this._dirtyModels.splice(dirtyModelIndex, 1);
-        } else {
+        if (dirtyModelIndex === -1) {
             this._dirtyModels.push({model: model.clonedModel, action: action});
+        }
+        else if (action !== 'change') {
+            this._dirtyModels.splice(dirtyModelIndex, 1);
         }
     },
     _handleRemoveEvent: function (model, action) {
@@ -993,7 +994,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
             var foundMatchingModel = !_.isUndefined(dirtyModelContainer.model) &&
                                      self._isMatchingModel(model, dirtyModelContainer.model);
             anyMatch = foundMatchingModel || anyMatch;
-            dirtyModelIndex = foundMatchingModel ? index : -1;
+            dirtyModelIndex = foundMatchingModel ? index : dirtyModelIndex;
             previousAction = dirtyModelContainer.action;
             return !foundMatchingModel;
         });
