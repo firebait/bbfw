@@ -33,6 +33,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
     */
     initialize: function () {
         this._dirtyModels = [];
+        this._isFetching = false;
         this._addModificationListeners();
     },
     /** Adds the add, remove and change event listener so that the _checkAndTriggerDirtyCollection gets called */
@@ -42,9 +43,17 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         this._modificationHandler('change');
         this.listenTo(this, 'sync', this.resetDirtyStatus);
     },
+    isFetching: function (fetchStatus) {
+        if (_.isUndefined(fetchStatus)) {
+            return this._isFetching;
+        }
+        this._isFetching = fetchStatus;
+    },
     resetDirtyStatus: function () {
-        this._dirtyModels = [];
-        this._setAndTriggerDirtyCollection(false);
+        if (!this.isFetching()) {
+            this._dirtyModels = [];
+            this._setAndTriggerDirtyCollection(false);
+        }
     },
     _modificationHandler: function (action) {
         var self = this;
@@ -69,7 +78,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         if (model instanceof Suit.Model) {
             if (model.isDirty && action === 'change') {
                 this._handleAddChangeEvents(model, action);
-            } else if (action === 'add') {
+            } else if (action === 'add' && !this.isFetching()) {
                 this._handleAddChangeEvents(model, action);
             } else if (action === 'remove') {
                 this._handleRemoveEvent(model, action);
@@ -88,12 +97,12 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
 
             if (action === 'add') {
                 foundMatchingModel = foundMatchingModel && self._isMatchingModel(model, dirtyModelContainer.model);
-                
+
             } else {
                 foundMatchingModel = foundMatchingModel && dirtyModelContainer.action === action &&
                                      (dirtyModelContainer.model.cid === model.clonedModel.cid ||
                                      self._isMatchingModel(model, dirtyModelContainer.model));
-                
+
             }
 
             dirtyModelIndex = foundMatchingModel ? index : dirtyModelIndex;
@@ -131,7 +140,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
             } else if (previousAction === 'change') {
                 this._dirtyModels[dirtyModelIndex].action = 'remove';
             }
-            
+
         }
     },
     _findModelIndex: function (knownModels, candidateModel) {
