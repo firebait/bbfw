@@ -379,6 +379,44 @@ describe('Suit Chart Component', function () {
             expect(view.$el.find('.nv-group.nv-series-0 .nv-bar:nth-child(2) rect').attr('height')).toBe('18');
 
         });
+
+        it('should use truncate formatter with default length value correclty', function () {
+            html = '<div id="testChart" suit-component-chart data-source="collection" data-chart-type="horizontalbar" data-source="collection" data-x-attr="label" data-x-axis-format="truncateText" data-show-x-axis="true" data-theme="dark" data-tooltips="true"></div></div>';
+            el = $(html)[0];
+            collection = new Suit.Collection([
+                {label: 'this is a very long test text 1', ctr: 1500, vcr: 1500, t: 1500},
+                {label: 'this is a very long test text 2', ctr: 2500, vcr: 2500, t: 2500},
+                {label: 'this is a very long test text 3', ctr: 4500, vcr: 4500, t: 4500},
+                {label: 'this is a very long test text 4', ctr: 5000, vcr: 5000, t: 5000}
+            ]);
+
+            view = new Suit.View({el: el, collection: collection});
+            testDiv.append(view.el);
+            view.render();
+            chartComponent = view.components.testChart;
+            el = view.$el;
+
+            expect(el.find('.nvd3.nv-wrap.nv-axis .tick:eq(0) text').text()).toBe('this is a very long ...');
+        });
+
+        it('should use truncate formatter with custom length value correclty', function () {
+            html = '<div id="testChart" suit-component-chart data-source="collection" data-chart-type="horizontalbar" data-source="collection" data-truncate-length="15" data-x-attr="label" data-x-axis-format="truncateText" data-show-x-axis="true" data-theme="dark" data-tooltips="true"></div></div>';
+            el = $(html)[0];
+            collection = new Suit.Collection([
+                {label: 'this is a very long test text 1', ctr: 1500, vcr: 1500, t: 1500},
+                {label: 'this is a very long test text 2', ctr: 2500, vcr: 2500, t: 2500},
+                {label: 'this is a very long test text 3', ctr: 4500, vcr: 4500, t: 4500},
+                {label: 'this is a very long test text 4', ctr: 5000, vcr: 5000, t: 5000}
+            ]);
+
+            view = new Suit.View({el: el, collection: collection});
+            testDiv.append(view.el);
+            view.render();
+            chartComponent = view.components.testChart;
+            el = view.$el;
+
+            expect(el.find('.nvd3.nv-wrap.nv-axis .tick:eq(0) text').text()).toBe('this is a very ...');
+        });
     });
 
     describe('pie chart', function () {
