@@ -26,7 +26,8 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         'thousand': 'thousandFormat',
         'percentage': 'percentageFormat',
         'abbreviate': 'abbreviateFormat',
-        'flatPercentage': 'flatPercentageFormat'
+        'flatPercentage': 'flatPercentageFormat',
+        'truncateText': 'truncateTextFormat'
     },
 
     colorsMap: {
@@ -79,6 +80,7 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         this.source                  = this.options.source || [];
         this.barHeight               = this.options.barHeight || 'auto';
         this.barWidth               = this.options.barWidth || 'auto';
+        this.truncateLength         = this.options.truncateLength || 20;
         this.data                    = [];
         this.tooltipContent          = null;
         this.tooltipsIncludeSmallBars   = _.isUndefined(this.options.tooltipsIncludeSmallBars) ? false : this.options.tooltipsIncludeSmallBars;
@@ -465,7 +467,12 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
         if (typeof(formatter) === 'function') {
             return formatter;
         }
-        return this[this.formatters[formatter]];
+        if (formatter === 'truncateText') {
+            return _.bind(this[this.formatters[formatter]], this);
+        }
+        else {
+            return this[this.formatters[formatter]];
+        }
     },
     /** Default formatter, only returns the original value */
     defaultFormat: function (d) {
@@ -478,6 +485,10 @@ Suit.Components.Chart = Suit.Component.extend(/** @lends Suit.Components.Table.p
     /** Date formatter will format a timestamp into M/D/YYYY h:mm a */
     datetimeFormat: function (d) {
         return moment.unix(d).utc().format('M/D/YYYY h:mm a');
+    },
+    /** String formatter will truncate the text of more than 24 characters */
+    truncateTextFormat: function (d) {
+        return Suit.Helpers.Formatters.truncate(d, this.truncateLength);
     },
     /** Date formatter will format a timestamp into M/D/YYYY */
     dateFormat: function (d) {
