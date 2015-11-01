@@ -791,10 +791,10 @@ Suit.Model = Backbone.RelationalModel.extend(/** @lends Suit.Model.prototype */{
 
         //Trigger specific changed attribute event and the general change event
         _.each(changedAttributes, function (changedAttribute) {
-            currentModel.trigger('change:' + changedAttribute);
+            currentModel.trigger('change:' + changedAttribute, currentModel);
         });
         if (!_.isEmpty(changedAttributes)) {
-            this.trigger('change');
+            this.trigger('change', this);
         }
 
         //Set isDirty to false and call the trigger dirty model event
@@ -909,6 +909,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
     */
     initialize: function () {
         this._dirtyModels = [];
+        this._isFetching = false;
         this._addModificationListeners();
     },
     /** Adds the add, remove and change event listener so that the _checkAndTriggerDirtyCollection gets called */
@@ -918,9 +919,17 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         this._modificationHandler('change');
         this.listenTo(this, 'sync', this.resetDirtyStatus);
     },
+    isFetching: function (fetchStatus) {
+        if (_.isUndefined(fetchStatus)) {
+            return this._isFetching;
+        }
+        this._isFetching = fetchStatus;
+    },
     resetDirtyStatus: function () {
-        this._dirtyModels = [];
-        this._setAndTriggerDirtyCollection(false);
+        if (!this.isFetching()) {
+            this._dirtyModels = [];
+            this._setAndTriggerDirtyCollection(false);
+        }
     },
     _modificationHandler: function (action) {
         var self = this;
@@ -945,7 +954,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
         if (model instanceof Suit.Model) {
             if (model.isDirty && action === 'change') {
                 this._handleAddChangeEvents(model, action);
-            } else if (action === 'add') {
+            } else if (action === 'add' && !this.isFetching()) {
                 this._handleAddChangeEvents(model, action);
             } else if (action === 'remove') {
                 this._handleRemoveEvent(model, action);
@@ -964,22 +973,23 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
 
             if (action === 'add') {
                 foundMatchingModel = foundMatchingModel && self._isMatchingModel(model, dirtyModelContainer.model);
-                
+
             } else {
                 foundMatchingModel = foundMatchingModel && dirtyModelContainer.action === action &&
                                      (dirtyModelContainer.model.cid === model.clonedModel.cid ||
                                      self._isMatchingModel(model, dirtyModelContainer.model));
-                
+
             }
 
-            dirtyModelIndex = foundMatchingModel ? index : -1;
+            dirtyModelIndex = foundMatchingModel ? index : dirtyModelIndex;
             return foundMatchingModel;
         });
 
-        if (dirtyModelIndex !== -1) {
-            this._dirtyModels.splice(dirtyModelIndex, 1);
-        } else {
+        if (dirtyModelIndex === -1) {
             this._dirtyModels.push({model: model.clonedModel, action: action});
+        }
+        else if (action !== 'change') {
+            this._dirtyModels.splice(dirtyModelIndex, 1);
         }
     },
     _handleRemoveEvent: function (model, action) {
@@ -993,7 +1003,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
             var foundMatchingModel = !_.isUndefined(dirtyModelContainer.model) &&
                                      self._isMatchingModel(model, dirtyModelContainer.model);
             anyMatch = foundMatchingModel || anyMatch;
-            dirtyModelIndex = foundMatchingModel ? index : -1;
+            dirtyModelIndex = foundMatchingModel ? index : dirtyModelIndex;
             previousAction = dirtyModelContainer.action;
             return !foundMatchingModel;
         });
@@ -1006,7 +1016,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
             } else if (previousAction === 'change') {
                 this._dirtyModels[dirtyModelIndex].action = 'remove';
             }
-            
+
         }
     },
     _findModelIndex: function (knownModels, candidateModel) {
