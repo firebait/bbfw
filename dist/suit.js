@@ -3887,6 +3887,12 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
                             return _.contains(globalFilters, item.id);
                         });
                     }
+                    var letter = 'letter_representation';
+                    _.each(parsedResponse, function (item) {
+                        if (!_.isUndefined(item[letter]) && item[letter] === 'A') {
+                            item.label = item.label + ' (app)';
+                        }
+                    });
 
                     return parsedResponse;
                 }
