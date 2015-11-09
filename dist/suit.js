@@ -3868,7 +3868,6 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
         // We need to set the id for the Typeahead to use.
         el.attr('id', this.cid);
 
-
         //start the engine
         this.engine = new Bloodhound({
             datumTokenizer: Bloodhound.tokenizers.obj.whitespace(dataKey),
@@ -3887,12 +3886,10 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
                             return _.contains(globalFilters, item.id);
                         });
                     }
-                    var letter = 'letter_representation';
-                    _.each(parsedResponse, function (item) {
-                        if (!_.isUndefined(item[letter]) && item[letter] === 'A') {
-                            item.label = item.label + ' (app)';
-                        }
-                    });
+
+                    if (!_.isUndefined(self.transformData)) {
+                        self.transformData(parsedResponse);
+                    }
 
                     return parsedResponse;
                 }
