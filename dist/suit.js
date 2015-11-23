@@ -3868,7 +3868,6 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
         // We need to set the id for the Typeahead to use.
         el.attr('id', this.cid);
 
-
         //start the engine
         this.engine = new Bloodhound({
             datumTokenizer: Bloodhound.tokenizers.obj.whitespace(dataKey),
@@ -3886,6 +3885,10 @@ Suit.Components.Typeahead = Suit.Component.extend(/** @lends Suit.Components.Typ
                         parsedResponse = _.reject(parsedResponse, function (item) {
                             return _.contains(globalFilters, item.id);
                         });
+                    }
+
+                    if (!_.isUndefined(self.transformData)) {
+                        self.transformData(parsedResponse);
                     }
 
                     return parsedResponse;
