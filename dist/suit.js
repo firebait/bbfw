@@ -956,7 +956,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
                 this._handleAddChangeEvents(model, action);
             } else if (action === 'add' && !this.isFetching()) {
                 this._handleAddChangeEvents(model, action);
-            } else if (action === 'remove') {
+            } else if (action === 'remove' && !this.isFetching()) {
                 this._handleRemoveEvent(model, action);
             }
             isDirty = !_.isEmpty(this._dirtyModels);
