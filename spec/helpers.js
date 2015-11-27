@@ -60,7 +60,7 @@ var setUp = function () {
     });
     App.mainRouter = new router();
     App.currentUser = App.Models.User.findOrCreate({id: 1, timeZone: 'utc', permission: 'ad_ops'});
-    localStorage.setItem('token', 'something');
+    Suit.LocalStorage.setItem('token', 'something');
 };
 
 // Login before every test and render the main view

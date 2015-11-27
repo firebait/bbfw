@@ -60,12 +60,12 @@ _.extend(Can.prototype, Events, /** @lends Can.prototype */{
     },
     authenticate: function () {
         // Check if the user is logged in.
-        if (_.isNull(localStorage.getItem('token'))) {
+        if (_.isNull(Suit.LocalStorage.getItem('token'))) {
             App.Controllers.Sessions.logout();
             return false;
         } else {
             if (_.isNull(App.currentUser)) {
-                App.currentUser = App.Models.User.find({token: localStorage.getItem('token')}) || App.Models.User.findOrCreate({token: localStorage.getItem('token')});
+                App.currentUser = App.Models.User.find({token: Suit.LocalStorage.getItem('token')}) || App.Models.User.findOrCreate({token: Suit.LocalStorage.getItem('token')});
             }
             if (App.currentUser.isNew()) {
                 App.currentUser.fetchMe();
