@@ -3,7 +3,7 @@
 describe('Suit Local Storage', function () {
 
     afterEach(function () {
-        Suit.LocalStorage.removeAll();
+        Suit.LocalStorage.clearStorage();
     });
 
     it('should get a storage', function () {
@@ -29,7 +29,7 @@ describe('Suit Local Storage', function () {
     it('should remove all items from the storage', function () {
         Suit.LocalStorage.setItem('key_1', 'value_1');
         Suit.LocalStorage.setItem('key_2', 'value_2');
-        Suit.LocalStorage.removeAll();
+        Suit.LocalStorage.clearStorage();
         expect(Suit.LocalStorage.getItem('key_1')).toBe(null);
         expect(Suit.LocalStorage.getItem('key_2')).toBe(null);
     });

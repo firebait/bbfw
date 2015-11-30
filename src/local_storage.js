@@ -74,7 +74,7 @@ Suit.LocalStorage = {
         }
         this._getStore().removeItem(key);
     },
-    removeAll: function () {
+    clearStorage: function () {
         this._getStore().clear();
     }
 };
