@@ -176,7 +176,14 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             inputElem.attr('data-error-key', key);
 
             // If the value is a list of errors, we should show them in a list
-            var content = _.isArray(value) ? value.join('<br />') : value;
+            var content = '';
+            if (_.isArray(value)) {
+                content = value.map(function (msg) {
+                    return msg.replace(key, _.str.humanize(key));
+                }).join('<br />');
+            } else {
+                content = value.replace(key, _.str.humanize(key));
+            }
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
