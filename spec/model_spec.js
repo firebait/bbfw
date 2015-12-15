@@ -27,7 +27,7 @@ describe('Suit Model', function () {
             model.save();
             server.respond();
             expect(model.get('test')).toEqual('test');
-            expect(localStorage.getItem('localStorage111')).toBe('{"id":111,"test":"test"}');
+            expect(Suit.LocalStorage.getItem('localStorage111')).toBe('{"id":111,"test":"test"}');
         });
         it('should load from localStorage', function () {
             model.set('test', 'test');
@@ -35,7 +35,7 @@ describe('Suit Model', function () {
             model.save();
             server.respond();
             expect(model.get('test')).toEqual('test');
-            expect(localStorage.getItem('localStorage111')).toBe('{"id":111,"test":"test"}');
+            expect(Suit.LocalStorage.getItem('localStorage111')).toBe('{"id":111,"test":"test"}');
             Backbone.Relational.store.reset();
             var newModel = Suit.Model.findOrCreate({id: 111});
             newModel.className = 'localStorage';
@@ -61,7 +61,7 @@ describe('Suit Model', function () {
         it('should save to localStorage after model is saved', function () {
             model.save({'test': 'test'});
             expect(model.get('test')).toEqual('test');
-            expect(localStorage.getItem('localStorageNoUrl112')).toBe('{"id":112,"test":"test"}');
+            expect(Suit.LocalStorage.getItem('localStorageNoUrl112')).toBe('{"id":112,"test":"test"}');
         });
 
         it('should load from localStorage', function () {
@@ -78,9 +78,9 @@ describe('Suit Model', function () {
         it('should remove from localStorage after model is deleted', function () {
             model.save({'test': 'test'});
             expect(model.get('test')).toEqual('test');
-            expect(localStorage.getItem('localStorageNoUrl112')).toBe('{"id":112,"test":"test"}');
+            expect(Suit.LocalStorage.getItem('localStorageNoUrl112')).toBe('{"id":112,"test":"test"}');
             model.destroy();
-            expect(localStorage.getItem('localStorageNoUrl112')).toBe(null);
+            expect(Suit.LocalStorage.getItem('localStorageNoUrl112')).toBe(null);
         });
 
     });

@@ -390,12 +390,12 @@ Backbone.sync = function (method, model, options) {
   */
 Suit.LocalStorage = {
     saveToLocalStorage: function (eventName) {
-        if (!this.localStorage || _.isUndefined(this.className)) {
+        if (!this._getStore() || _.isUndefined(this.className)) {
             return;
         }
         var key = this.className + this.id;
         if (eventName !== 'deleted') {
-            var currentAttr = JSON.parse(localStorage.getItem(key));
+            var currentAttr = JSON.parse(this._getStore().getItem(key));
             if (!_.isObject(currentAttr)) {
                 currentAttr = {};
             }
@@ -403,20 +403,20 @@ Suit.LocalStorage = {
             _.each(attributes, function (value, k) {
                 currentAttr[k] = value;
             });
-            localStorage.setItem(key, JSON.stringify(currentAttr));
+            this._getStore().setItem(key, JSON.stringify(currentAttr));
         } else {
-            localStorage.removeItem(key);
+            this._getStore().removeItem(key);
         }
     },
     loadFromLocalStorage: function (force) {
-        if (!this.localStorage || _.isUndefined(this.className)) {
+        if (!this._getStore() || _.isUndefined(this.className)) {
             return;
         }
         var key = this.className + this.id;
-        var allAttrs = localStorage.getItem(key);
+        var allAttrs = this._getStore().getItem(key);
 
         // Load if you are forcing it or if it has only the id attribute.
-        if (this.localStorage && (force || ((this.id && _.size(this.attributes) === 1) && !_.isNull(allAttrs)))) {
+        if (this._getStore() && (force || ((this.id && _.size(this.attributes) === 1) && !_.isNull(allAttrs)))) {
             var self = this;
             this.attributes = JSON.parse(allAttrs);
             // We need to trigger the change events on the model for each attribute that was set.
@@ -425,6 +425,36 @@ Suit.LocalStorage = {
                 self.trigger('change:' + attr);
             });
         }
+    },
+    _getStore: function () {
+        try {
+            window.localStorage.getItem('test');
+            return window.localStorage;
+        } catch (e) {
+            return window.sessionStorage;
+        }
+    },
+    setItem: function (key, value) {
+        if (!key || !value) {
+            return null;
+        }
+        this._getStore().setItem(key, value);
+    },
+    getItem: function (key) {
+        var value = this._getStore().getItem(key);
+        if (!value) {
+            return null;
+        }
+        return value;
+    },
+    removeItem: function (key) {
+        if (!this._getStore().getItem(key)) {
+            return null;
+        }
+        this._getStore().removeItem(key);
+    },
+    clearStorage: function () {
+        this._getStore().clear();
     }
 };
 
@@ -2171,12 +2201,12 @@ _.extend(Can.prototype, Events, /** @lends Can.prototype */{
     },
     authenticate: function () {
         // Check if the user is logged in.
-        if (_.isNull(localStorage.getItem('token'))) {
+        if (_.isNull(Suit.LocalStorage.getItem('token'))) {
             App.Controllers.Sessions.logout();
             return false;
         } else {
             if (_.isNull(App.currentUser)) {
-                App.currentUser = App.Models.User.find({token: localStorage.getItem('token')}) || App.Models.User.findOrCreate({token: localStorage.getItem('token')});
+                App.currentUser = App.Models.User.find({token: Suit.LocalStorage.getItem('token')}) || App.Models.User.findOrCreate({token: Suit.LocalStorage.getItem('token')});
             }
             if (App.currentUser.isNew()) {
                 App.currentUser.fetchMe();
