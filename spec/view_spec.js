@@ -275,6 +275,24 @@ describe('Suit View', function () {
             expect(view.showVisualError).toHaveBeenCalled();
         });
 
+        it('should trigger the unhandledUIErrors event', function () {
+            model.url = 'someurl';
+            view = new Suit.View({id: 'view', model: model});
+            view.template = function () { return '<input type="text" name="name" class="test"/>'; };
+            view.errorTest = function () {};
+            var unhandledErrorSpy = sinon.spy(view, 'errorTest');
+            view.listenTo(view, 'unhandledUIErrors', view.errorTest);
+            server = sinon.fakeServer.create();
+            server.respondWith('POST', view.model.url, function (xhr) {
+                xhr.respond(422, { 'Content-Type': 'application/json' }, JSON.stringify(
+                  {'state': 'input field can not be blank', 'name2': 'name2 is wrong'}));
+            });
+            view.render();
+            view.model.save();
+            server.respond();
+            view.close();
+            expect(unhandledErrorSpy).toHaveBeenCalled();
+        });
     });
 
     describe('viewable elements', function () {
@@ -310,5 +328,4 @@ describe('Suit View', function () {
 
         });
     });
-
 });

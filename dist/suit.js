@@ -1377,6 +1377,8 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
             this.errors.push(tooltip);
             $('body').append(tooltip);
+        } else if (!_.isUndefined(key) && !_.isUndefined(value)) {
+            this.trigger('unhandledUIErrors', key, value);
         }
     },
     /**
@@ -1517,9 +1519,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         var el;
 
         if (object) {
-            // if (!object.selector) {
             object.selector = object.selector || {};
-            // }
 
             if (object.selector instanceof HTMLElement) {
                 el  = $(object.selector);
