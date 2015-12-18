@@ -279,9 +279,7 @@ describe('Suit View', function () {
             model.url = 'someurl';
             view = new Suit.View({id: 'view', model: model});
             view.template = function () { return '<input type="text" name="name" class="test"/>'; };
-            view.errorTest = function () {};
-            var unhandledErrorSpy = sinon.spy(view, 'errorTest');
-            view.listenTo(view, 'unhandledUIErrors', view.errorTest);
+            var unhandledErrorSpy = sinon.spy(view, '_unhandledUIErrors');
             server = sinon.fakeServer.create();
             server.respondWith('POST', view.model.url, function (xhr) {
                 xhr.respond(422, { 'Content-Type': 'application/json' }, JSON.stringify(
