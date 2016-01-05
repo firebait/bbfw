@@ -94,5 +94,17 @@ describe('Date range component', function () {
             expect(startInput.attr('placeholder')).toBe('Before');
             expect(endInput.val()).toBe(moment().format('MM/DD/YYYY'));
         });
+
+        it('should be able to select custom dates', function () {
+            view.$el.find('select').val('last_7_days');
+            startInput.trigger('click');
+            startInput.parent().data('view').picker.setDate('01/13/2016');
+            expect(view.$el.find('select').val()).toBe('custom');
+            expect(startInput.val()).toBe('01/13/2016');
+
+            endInput.trigger('click');
+            endInput.parent().data('view').picker.setDate('01/14/2016');
+            expect(endInput.val()).toBe('01/14/2016');
+        });
     });
 });
