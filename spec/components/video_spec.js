@@ -2,12 +2,15 @@
 
 describe('Suit video component', function () {
    
-    var view;
+    var view, html, testDiv, el;
 
     beforeEach(function () {
-        view = new Suit.View();
-        // We need to make a tempalte that includes a toogle button.
-        view.template = function () { return '<video height="186" width="330" class="video video-js vjs-default-skin vjs-big-play-centered"><source src="" /></video>'; };
+        testDiv = $('<div id="container-' + jasmine.getEnv().currentSpec.id + '"></div>');
+        $('body').append(testDiv);
+        html = '<div><video height="186" width="330" class="video video-js vjs-default-skin vjs-big-play-centered"><source src="http://www.youtube.com/watch?v=xf5PIyJQjHw" /></video></div>';
+        el = $(html)[0];
+        view = new Suit.View({el: el});
+        testDiv.html(view.el);
         view.render();
     });
 
@@ -15,9 +18,9 @@ describe('Suit video component', function () {
         view.close();
     });
 
-    it('should initialize a toggle button view', function () {
-        var video = view.$el.find('.video');
-        expect(video.data('view')).not.toBeUndefined();
+    it('should initialize a view containing the video component', function () {
+        var video = view.children[0];
+        expect(video).not.toBeUndefined();
     });
 
 });

@@ -18,7 +18,7 @@ describe('Suit slider component', function () {
         view.close();
     });
 
-    it('should initialize a toggle button view', function () {
+    it('should initialize a view containing the slider component', function () {
         var sliderView = view.$el.find('.slider');
         expect(sliderView.data('view')).not.toBeUndefined();
     });
