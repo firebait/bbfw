@@ -12,10 +12,11 @@ Suit.Components.Binders.view = {
             self = this,
             attr;
 
-        _.each(view.split('.'), function (child) {
-            if (_.isUndefined(Root)) { return; }
-            Root = Root[child];
-        });
+        if (!_.isUndefined(Root) && !_.isUndefined(view)) {
+            _.each(view.split('.'), function (child) {
+                Root = Root[child];
+            });
+        }
 
         if (_.isUndefined(Root)) { throw view + ' does not exist.'; }
 
