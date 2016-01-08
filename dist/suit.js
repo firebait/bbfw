@@ -1396,13 +1396,15 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
                 errors += '<li>' + Suit.Helpers.Formatters.humanize(element) + '</li>';
             });
             errors += '</ul></div>';
+
+            var alertBox = body.find('.alert-box-error');
             //If there is no alert, we should create it, or check if does not contains the error
-            if (body.find('.alert-box-error').length === 0) {
+            if (alertBox.length === 0) {
                 errors = '<h3>Errors</h3>' + errors;
                 var msgView = new Suit.Components.ErrorAlert({message: errors});
                 body.prepend(msgView.render().$el);
-            } else if (!_.str.contains(body.find('.alert-box-error').html(), errors)) {
-                body.find('.alert-box-error').append(errors);
+            } else if (!_.str.contains(alertBox.html(), errors)) {
+                alertBox.append(errors);
             }
         }
     },
