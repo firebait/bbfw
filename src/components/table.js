@@ -144,8 +144,9 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     /* Hides loader that was shows during a table:next event */
     _removeInfiniteLoader: function () {
-        this.parent.removeLoader('.infinite-scroll-loader');
-        this.find('.infinite-scroll-loader').hide();
+        var loader = this.$el.find('.infinite-scroll-loader');
+        this.parent.removeLoader(loader);
+        loader.hide();
         this._fetchingNextPage = false;
     },
 
@@ -233,9 +234,10 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     /* Called when bottom of infinite scroll based table comes into view, adds a loader and fires a table:next event*/
     _next: function () {
+        var loader = this.$el.find('.infinite-scroll-loader');
         this._fetchingNextPage = true;
-        this.find('.infinite-scroll-loader').show();
-        this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
+        loader.show();
+        this.parent.loader({selector: loader, loaderSize: 'small', tone: 'light'});
         this.trigger('table:next', this.collection, _.bind(this._removeInfiniteLoader, this));
     }
 });

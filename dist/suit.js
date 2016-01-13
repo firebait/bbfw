@@ -1185,6 +1185,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
 // Extend the RestfulUrls.
 _.extend(Suit.Collection.prototype, Suit.RestfulUrls);
 
+/* global HTMLElement, jQuery */
 'use strict';
 
 Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
@@ -1514,11 +1515,25 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     **/
     loader: function (object) {
         var el;
-        if (object && object.selector) {
-            el  = this.find(object.selector);
+
+        if (object) {
+            // if (!object.selector) {
+            object.selector = object.selector || {};
+            // }
+
+            if (object.selector instanceof HTMLElement) {
+                el  = $(object.selector);
+            } else if (object.selector instanceof jQuery) {
+                el  = object.selector;
+            } else if (typeof object.selector === 'string') {
+                el  = this.find(object.selector);
+            } else {
+                el = this.$el;
+            }
         } else {
             el = this.$el;
         }
+
         var parent = el.parent();
         var height = el.outerHeight();
         var width = el.outerWidth();
@@ -1546,7 +1561,16 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     @params {String} selector.
     */
     removeLoader: function (selector) {
-        var el = this.find(selector);
+        var el;
+
+        if (selector instanceof HTMLElement) {
+            el = $(selector);
+        } else if (selector instanceof jQuery) {
+            el = selector;
+        } else {
+            el = this.find(selector);
+        }
+
         var parent = el.parent();
         var loader = el.find('.loader');
         loader.remove();
@@ -3637,8 +3661,9 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     /* Hides loader that was shows during a table:next event */
     _removeInfiniteLoader: function () {
-        this.parent.removeLoader('.infinite-scroll-loader');
-        this.find('.infinite-scroll-loader').hide();
+        var loader = this.$el.find('.infinite-scroll-loader');
+        this.parent.removeLoader(loader);
+        loader.hide();
         this._fetchingNextPage = false;
     },
 
@@ -3726,12 +3751,14 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
 
     /* Called when bottom of infinite scroll based table comes into view, adds a loader and fires a table:next event*/
     _next: function () {
+        var loader = this.$el.find('.infinite-scroll-loader');
         this._fetchingNextPage = true;
-        this.find('.infinite-scroll-loader').show();
-        this.parent.loader({selector: '.infinite-scroll-loader', loaderSize: 'small', tone: 'light'});
+        loader.show();
+        this.parent.loader({selector: loader, loaderSize: 'small', tone: 'light'});
         this.trigger('table:next', this.collection, _.bind(this._removeInfiniteLoader, this));
     }
 });
+
 'use strict';
 
 if (!_.has(Suit, 'Components')) {
