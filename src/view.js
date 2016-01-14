@@ -190,6 +190,35 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
             this.errors.push(tooltip);
             $('body').append(tooltip);
+        } else {
+            this._unhandledUIErrors(key, value);
+        }
+    },
+    /**
+      * It handles the visual errors that are no associated to an element in 
+      * the view.
+      * @param {String} key - Form key
+      * @param {String} value - The error message of the Form Key
+      */
+    _unhandledUIErrors: function (key, value) {
+        var body = $('body');
+        //If there is no tooltip error for this key, we should show it on an alert
+        if (!_.str.contains(body.find('.error').children().attr('data-error-key'), key)) {
+            var errors = '<div class="ml-30">' + Suit.Helpers.Formatters.humanize(key) + '<ul>';
+            _.each(value, function (element) {
+                errors += '<li>' + Suit.Helpers.Formatters.humanize(element) + '</li>';
+            });
+            errors += '</ul></div>';
+
+            var alertBox = body.find('.alert-box-error');
+            //If there is no alert, we should create it, or check if does not contains the error
+            if (alertBox.length === 0) {
+                errors = '<h3>Errors</h3>' + errors;
+                var msgView = new Suit.Components.ErrorAlert({message: errors});
+                body.prepend(msgView.render().$el);
+            } else if (!_.str.contains(alertBox.html(), errors)) {
+                alertBox.append(errors);
+            }
         }
     },
     /**

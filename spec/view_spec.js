@@ -253,6 +253,7 @@ describe('Suit View', function () {
 
         afterEach(function () {
             _.defer = defer;
+            $('body').find('.alert-box-error').remove();
         });
 
         it('should respond to validation of model', function () {
@@ -275,6 +276,44 @@ describe('Suit View', function () {
             expect(view.showVisualError).toHaveBeenCalled();
         });
 
+        it('should create an error alert box', function () {
+            model.url = 'someurl';
+            view = new Suit.View({id: 'view', model: model});
+            view.template = function () { return '<input type="text" name="name" class="test"/>'; };
+            var unhandledErrorSpy = sinon.spy(view, '_unhandledUIErrors');
+            server = sinon.fakeServer.create();
+            server.respondWith('POST', view.model.url, function (xhr) {
+                xhr.respond(422, { 'Content-Type': 'application/json' }, JSON.stringify(
+                  {'state': ['input field can not be blank']}));
+            });
+            view.render();
+            view.model.save();
+            server.respond();
+            view.close();
+            expect(unhandledErrorSpy).toHaveBeenCalled();
+            var alertBox = $('body').find('.alert-box-error');
+            expect(alertBox.length).toBe(1);
+            expect(alertBox.text().trim()).toBe('exErrorsStateInput field can not be blank');
+        });
+
+        it('should append an error message on an existing error alert box', function () {
+            $('body').prepend('<a href="javascript:void(0);" class="alert-box-error"><span class="icon f-left">e</span><span class="f-right">x</span><p></p><h3>Errors</h3><div class="ml-30">State<ul><li>Input field can not be blank</li></ul></div><p></p></a>');
+            model.url = 'someurl';
+            view = new Suit.View({id: 'view', model: model});
+            view.template = function () { return '<input type="text" name="name" class="test"/>'; };
+            server = sinon.fakeServer.create();
+            server.respondWith('POST', view.model.url, function (xhr) {
+                xhr.respond(422, { 'Content-Type': 'application/json' }, JSON.stringify(
+                  {'email': ['invalid email ']}));
+            });
+            view.render();
+            view.model.save();
+            server.respond();
+            view.close();
+            var alertBox = $('body').find('.alert-box-error');
+            expect(alertBox.length).toBe(1);
+            expect(alertBox.text().trim()).toBe('exErrorsStateInput field can not be blankEmailInvalid email');
+        });
     });
 
     describe('viewable elements', function () {
@@ -310,5 +349,4 @@ describe('Suit View', function () {
 
         });
     });
-
 });
