@@ -57,12 +57,6 @@ Suit.Components.TimePicker = Suit.Component.extend(/** @lends Suit.Components.Ti
             this.$el.find('input').timepicker('show');
         }
     },
-    //
-    template: JST['suit/components/time_picker'],
-    render: function () {
-        $('body').append(this.template(this));
-        return this;
-    },
     toggleActive: function () {
         // Method to actually move the first element (noneOption) to the bottom
         // of the list.

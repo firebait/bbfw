@@ -43,6 +43,20 @@ describe('Suit multi-select component', function () {
             expect(el.find('.multi-select-options').css('display')).toBe('');
         });
 
+        it('should close the multi select when the user clicks outside the view', function () {
+            var testDiv = $('<div id="container-' + jasmine.getEnv().currentSpec.id + '"></div>');
+            $('body').append(testDiv);
+            testDiv.html(el);
+            view.render();
+
+            var spy = sinon.spy($.fn, 'hide');
+            var e = $.Event('click');
+            e.target = $('.multi-select')[0];
+            $(document).trigger(e);
+            expect(spy).toHaveBeenCalled();
+            spy.restore();
+            testDiv.remove();
+        });
 
     });
 });
