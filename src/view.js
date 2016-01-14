@@ -1,3 +1,4 @@
+/* global HTMLElement, jQuery */
 'use strict';
 
 Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
@@ -327,11 +328,23 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     **/
     loader: function (object) {
         var el;
-        if (object && object.selector) {
-            el  = this.find(object.selector);
+
+        if (object) {
+            object.selector = object.selector || {};
+
+            if (object.selector instanceof HTMLElement) {
+                el  = $(object.selector);
+            } else if (object.selector instanceof jQuery) {
+                el  = object.selector;
+            } else if (typeof object.selector === 'string') {
+                el  = this.find(object.selector);
+            } else {
+                el = this.$el;
+            }
         } else {
             el = this.$el;
         }
+
         var parent = el.parent();
         var height = el.outerHeight();
         var width = el.outerWidth();
@@ -359,7 +372,16 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     @params {String} selector.
     */
     removeLoader: function (selector) {
-        var el = this.find(selector);
+        var el;
+
+        if (selector instanceof HTMLElement) {
+            el = $(selector);
+        } else if (selector instanceof jQuery) {
+            el = selector;
+        } else {
+            el = this.find(selector);
+        }
+
         var parent = el.parent();
         var loader = el.find('.loader');
         loader.remove();
