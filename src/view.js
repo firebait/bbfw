@@ -215,7 +215,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
     _unhandledUIErrors: function (key, value) {
         var body = $('body');
         //If there is no tooltip error for this key, we should show it on an alert
-        if (!_.str.contains(body.find('.error').children().attr('data-error-key'), key)) {
+        if (!_.str.contains(body.find('.tooltip:not("#suit-tooltip")').attr('data-error-key'), key)) {
             var errors = '<div class="ml-30">' + Suit.Helpers.Formatters.humanize(key) + '<ul>';
             _.each(value, function (element) {
                 errors += '<li>' + Suit.Helpers.Formatters.humanize(element) + '</li>';
