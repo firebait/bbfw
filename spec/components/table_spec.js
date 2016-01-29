@@ -155,7 +155,17 @@ describe('Suit Table Component', function () {
                 expect(collection.sortOrder).toEqual('desc');
 
             });
+        });
 
+        describe('modifying the collection', function () {
+
+            it('should re-evaluate the collection when a model is added or removed', function () {
+                var testModel = collection.models[0];
+                var validateSpy = sinon.spy(testModel, 'validate');
+                collection.trigger('add');
+                collection.trigger('remove');
+                expect(validateSpy).toHaveBeenCalledTwice();
+            });
         });
     });
 
