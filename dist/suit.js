@@ -1034,7 +1034,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
                                      self._isMatchingModel(model, dirtyModelContainer.model);
             anyMatch = foundMatchingModel || anyMatch;
             dirtyModelIndex = foundMatchingModel ? index : dirtyModelIndex;
-            previousAction = dirtyModelContainer.action;
+            previousAction = foundMatchingModel ? dirtyModelContainer.action : previousAction;
             return !foundMatchingModel;
         });
 
