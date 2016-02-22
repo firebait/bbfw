@@ -33,6 +33,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
         this.$tbody.find('tr').first().attr('suit-each-row', keypath);
         this.listenTo(this.collection, 'sort', this._updateHeaders);
+        this.listenTo(this.collection, 'add remove', this._updateValidations);
         this.listenTo(this.collection, 'sync', this._adjustHeaderSize);
         if (_.has(this.options, 'infiniteScroll')) {
             this._setupInfiniteScroll();
@@ -66,6 +67,13 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
                 $ele.data('current-sort-order', false);
                 $ele.removeClass('active asc desc');
             }
+        });
+    },
+
+    /* Callback from collection "add" and "remove" event. Makes sure to revalidate all models, to make sure each validation is assigned to the correct one */
+    _updateValidations: function () {
+        this.collection.each(function (model) {
+            model.validate();
         });
     },
 

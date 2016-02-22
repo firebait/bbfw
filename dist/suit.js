@@ -1034,7 +1034,7 @@ Suit.Collection = Backbone.Collection.extend(/** @lends Suit.Collection.prototyp
                                      self._isMatchingModel(model, dirtyModelContainer.model);
             anyMatch = foundMatchingModel || anyMatch;
             dirtyModelIndex = foundMatchingModel ? index : dirtyModelIndex;
-            previousAction = dirtyModelContainer.action;
+            previousAction = foundMatchingModel ? dirtyModelContainer.action : previousAction;
             return !foundMatchingModel;
         });
 
@@ -1363,15 +1363,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             // Add key reference, for further use
             inputElem.attr('data-error-key', key);
 
-            // If the value is a list of errors, we should show them in a list
-            var content = '';
-            if (_.isArray(value)) {
-                content = value.map(function (msg) {
-                    return msg.replace(key, _.str.humanize(key));
-                }).join('<br />');
-            } else {
-                content = value.replace(key, _.str.humanize(key));
-            }
+            var content = this._formatErrorMessage(key, value);
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
@@ -1382,7 +1374,27 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         }
     },
     /**
-      * It handles the visual errors that are no associated to an element in 
+     * Humanizes and formats the error message to display on input validations.
+     * @param  {String} key - Form key
+     * @param  {String} value - The error message of the Form key
+     * @return {String} The formatted message
+     */
+    _formatErrorMessage: function (key, value) {
+        // If the value is a list of errors, we should show them in a list
+        var content = '';
+        var searchText = new RegExp(key, 'ig');
+        if (_.isArray(value)) {
+            content = value.map(function (msg) {
+                return msg.replace(searchText, _.str.humanize(key));
+            }).join('<br />');
+        } else {
+            content = value.replace(searchText, _.str.humanize(key));
+        }
+
+        return content;
+    },
+    /**
+      * It handles the visual errors that are no associated to an element in
       * the view.
       * @param {String} key - Form key
       * @param {String} value - The error message of the Form Key
@@ -3577,6 +3589,7 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
         }
         this.$tbody.find('tr').first().attr('suit-each-row', keypath);
         this.listenTo(this.collection, 'sort', this._updateHeaders);
+        this.listenTo(this.collection, 'add remove', this._updateValidations);
         this.listenTo(this.collection, 'sync', this._adjustHeaderSize);
         if (_.has(this.options, 'infiniteScroll')) {
             this._setupInfiniteScroll();
@@ -3610,6 +3623,13 @@ Suit.Components.Table = Suit.Component.extend(/** @lends Suit.Components.Table.p
                 $ele.data('current-sort-order', false);
                 $ele.removeClass('active asc desc');
             }
+        });
+    },
+
+    /* Callback from collection "add" and "remove" event. Makes sure to revalidate all models, to make sure each validation is assigned to the correct one */
+    _updateValidations: function () {
+        this.collection.each(function (model) {
+            model.validate();
         });
     },
 
@@ -3845,12 +3865,6 @@ Suit.Components.TimePicker = Suit.Component.extend(/** @lends Suit.Components.Ti
             this.$el.find('input').timepicker('show');
         }
     },
-    //
-    template: JST['suit/components/time_picker'],
-    render: function () {
-        $('body').append(this.template(this));
-        return this;
-    },
     toggleActive: function () {
         // Method to actually move the first element (noneOption) to the bottom
         // of the list.
@@ -4084,10 +4098,11 @@ Suit.Components.Binders.view = {
             self = this,
             attr;
 
-        _.each(view.split('.'), function (child) {
-            if (_.isUndefined(Root)) { return; }
-            Root = Root[child];
-        });
+        if (!_.isUndefined(Root) && !_.isUndefined(view)) {
+            _.each(view.split('.'), function (child) {
+                Root = Root[child];
+            });
+        }
 
         if (_.isUndefined(Root)) { throw view + ' does not exist.'; }
 

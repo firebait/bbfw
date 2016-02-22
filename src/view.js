@@ -176,15 +176,7 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
             // Add key reference, for further use
             inputElem.attr('data-error-key', key);
 
-            // If the value is a list of errors, we should show them in a list
-            var content = '';
-            if (_.isArray(value)) {
-                content = value.map(function (msg) {
-                    return msg.replace(key, _.str.humanize(key));
-                }).join('<br />');
-            } else {
-                content = value.replace(key, _.str.humanize(key));
-            }
+            var content = this._formatErrorMessage(key, value);
 
             // Add tooltip element
             var tooltip = $('<div class="tooltip" data-error-key="' + key + '"><div class="tooltip-content">' +  content + '</div><div class="tooltip-arrow"></div></div>');
@@ -195,7 +187,27 @@ Suit.View = Backbone.View.extend(/** @lends Suit.View.prototype */{
         }
     },
     /**
-      * It handles the visual errors that are no associated to an element in 
+     * Humanizes and formats the error message to display on input validations.
+     * @param  {String} key - Form key
+     * @param  {String} value - The error message of the Form key
+     * @return {String} The formatted message
+     */
+    _formatErrorMessage: function (key, value) {
+        // If the value is a list of errors, we should show them in a list
+        var content = '';
+        var searchText = new RegExp(key, 'ig');
+        if (_.isArray(value)) {
+            content = value.map(function (msg) {
+                return msg.replace(searchText, _.str.humanize(key));
+            }).join('<br />');
+        } else {
+            content = value.replace(searchText, _.str.humanize(key));
+        }
+
+        return content;
+    },
+    /**
+      * It handles the visual errors that are no associated to an element in
       * the view.
       * @param {String} key - Form key
       * @param {String} value - The error message of the Form Key
