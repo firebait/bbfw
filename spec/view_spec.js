@@ -314,6 +314,23 @@ describe('Suit View', function () {
             expect(alertBox.length).toBe(1);
             expect(alertBox.text().trim()).toBe('exErrorsStateInput field can not be blankEmailInvalid email');
         });
+
+        it('should not show an alert if a tooltip error has been added', function () {
+            model.url = 'someurl';
+            view = new Suit.View({id: 'view', model: model});
+            view.template = function () { return '<input type="text" name="name" class="error"/><div class="tooltip" data-error-key="name"><div class="tooltip-content">Error!</div><div class="tooltip-arrow"></div></div>'; };
+            server = sinon.fakeServer.create();
+            server.respondWith('POST', view.model.url, function (xhr) {
+                xhr.respond(422, { 'Content-Type': 'application/json' }, JSON.stringify(
+                  {'name': ['Error!']}));
+            });
+            view.render();
+            view.errors = [view.$el.find('.tooltip')];
+            view.model.save();
+            server.respond();
+            expect(view.$el.find('[name="name"].error').length).toEqual(1);
+            expect(view.$el.find('.alert-box-error').length).toEqual(0);
+        });
     });
 
     describe('viewable elements', function () {
