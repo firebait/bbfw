@@ -4044,7 +4044,7 @@ Suit.Components.Video = Suit.Component.extend(/** @lends Suit.Components.Video.p
       *
       * <p>Attributes to be set in mark-up</p>
       * <p>It takes the same attributes as the VideoJS plugin as data attributes:</p>
-      * 
+      *
       * @augments Suit.Component
       * @constructs Suit.Components.Video
       */
@@ -4053,17 +4053,17 @@ Suit.Components.Video = Suit.Component.extend(/** @lends Suit.Components.Video.p
         // Let's initialize all components and hook up all the events.
         var self = this;
         var el = this.$el;
-        
+
         // We need to set the id for the slider to use.
         el.attr('id', this.cid);
- 
+
         var video = document.getElementById(this.cid);
         if (video) {
             this.video = videojs(video, {
                 'controls': true,
                 'autoplay': false,
                 'preload': 'auto',
-                'techOrder': ['flash', 'html5']
+                'techOrder': ['html5', 'flash']
             });
         }
 
